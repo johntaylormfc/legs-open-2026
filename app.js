@@ -187,11 +187,7 @@ useEffect(() => {
       // Load all scores for player history (always, not just for current tournament)
       const scoresRes = await supabase.from('scores').select('*');
       if (scoresRes.data) {
-        console.log('[loadData] Loaded all scores:', scoresRes.data.length, 'total scores');
-        console.log('[loadData] Sample score:', scoresRes.data[0]);
         setAllScores(scoresRes.data);
-      } else {
-        console.log('[loadData] No scores data or error:', scoresRes.error);
       }
 
       if (currentTournament) {
@@ -1239,18 +1235,11 @@ useEffect(() => {
       
       selectedPlayer && (() => {
         // Calculate player's tournament history
-        console.log('[Player History] Selected player:', selectedPlayer.name);
-        console.log('[Player History] All scores count:', allScores.length);
-        console.log('[Player History] Tournaments count:', tournaments.length);
-
         const playerTournaments = tournaments.map(tournament => {
           // Get player's scores for THIS specific tournament (not current tournament)
           const tournamentScores = allScores.filter(s =>
             s.tournament_id === tournament.id && s.player_id === selectedPlayer.id
           );
-
-          console.log(`[Player History] Tournament: ${tournament.name} (ID: ${tournament.id})`);
-          console.log(`[Player History] Scores found:`, tournamentScores.length);
 
           // Build scores map for this tournament
           const playerScores = {};
@@ -1259,8 +1248,6 @@ useEffect(() => {
           });
 
           const grossTotal = Object.values(playerScores).reduce((sum, s) => sum + s, 0);
-          console.log(`[Player History] Gross total:`, grossTotal);
-
           const playingHandicap = calculatePlayingHandicap(selectedPlayer.handicap);
           const netTotal = grossTotal - playingHandicap;
 
