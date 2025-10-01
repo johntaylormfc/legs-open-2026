@@ -2,7 +2,8 @@
 const APP_CONFIG = {
   supabaseUrl: 'https://pygqvtumydxsnybvakkw.supabase.co',
   supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Z3F2dHVteWR4c255YnZha2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTU0MDgsImV4cCI6MjA3NDgzMTQwOH0.gZEXn485fkwjdnedthefsEyhnHiEMO_ZvreS9meiZbg',
-  golfDataApiUrl: 'https://golf-data-api.brewererp.uk',
+  golfApiKey: 'JL4HBGKKLZZSXLHGDYRSFUUVLI',
+  golfApiUrl: 'https://api.golfcourseapi.com',
   defaultHoleData: Array.from({ length: 18 }, (_, i) => ({
     hole: i + 1,
     par: i < 4 || i > 13 ? 4 : (i === 4 || i === 14 ? 3 : 5),
@@ -204,7 +205,11 @@ function LegsOpenTournament() {
     
     setSearchingCourses(true);
     try {
-      const response = await fetch(`${APP_CONFIG.golfDataApiUrl}/v1/courses/search?name=${encodeURIComponent(courseSearch)}`);
+      const response = await fetch(`${APP_CONFIG.golfApiUrl}/course?name=${encodeURIComponent(courseSearch)}`, {
+        headers: {
+          'x-api-key': APP_CONFIG.golfApiKey
+        }
+      });
       if (!response.ok) throw new Error('Failed to search courses');
       const data = await response.json();
       setSearchResults(data.courses || []);
@@ -221,12 +226,34 @@ function LegsOpenTournament() {
     setSearchResults([]);
     
     try {
-      // Fetch course details including tees
-      const response = await fetch(`${APP_CONFIG.golfDataApiUrl}/v1/courses/${course.id}`);
+      // Fetch detailed course information including scorecard
+      const response = await fetch(`${APP_CONFIG.golfApiUrl}/course/${course.id}`, {
+        headers: {
+          'x-api-key': APP_CONFIG.golfApiKey
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch course details');
       const data = await response.json();
       
-      setAvailableTees(data.tees || []);
+      // Extract tees from scorecard data
+      const tees = [];
+      if (data.data && data.data.scorecard) {
+        // The API returns scorecard with different tee types
+        Object.keys(data.data.scorecard).forEach(teeName => {
+          const teeData = data.data.scorecard[teeName];
+          if (teeData && Array.isArray(teeData.holes)) {
+            tees.push({
+              name: teeName,
+              holes: teeData.holes,
+              slope_rating: teeData.slope || 113,
+              course_rating: teeData.rating || 72,
+              totalPar: teeData.holes.reduce((sum, h) => sum + (h.toPar || 0), 0)
+            });
+          }
+        });
+      }
+      
+      setAvailableTees(tees);
       setNewTournament({
         ...newTournament,
         course_name: course.name
@@ -242,9 +269,9 @@ function LegsOpenTournament() {
     
     // Map the tee data to our hole format
     const holes = tee.holes.map((hole, index) => ({
-      hole: index + 1,
-      par: hole.par,
-      strokeIndex: hole.stroke_index || index + 1
+      hole: hole.hole || index + 1,
+      par: hole.toPar || 4,
+      strokeIndex: hole.hcp || index + 1
     }));
     
     setNewTournament({
@@ -462,7 +489,9 @@ function LegsOpenTournament() {
               className: 'p-3 border border-gray-200 rounded hover:bg-green-50 cursor-pointer'
             },
               h('p', { className: 'font-semibold' }, course.name),
-              h('p', { className: 'text-sm text-gray-600' }, `${course.city || ''}, ${course.country || ''}`)
+              h('p', { className: 'text-sm text-gray-600' }, 
+                `${course.addr_city || ''}, ${course.addr_state || ''} ${course.addr_country || ''}`
+              )
             ))
           )
         ),
@@ -473,7 +502,9 @@ function LegsOpenTournament() {
             h('div', null,
               h('h4', { className: 'font-semibold text-green-800' }, 'Selected Course'),
               h('p', { className: 'font-bold' }, selectedCourse.name),
-              h('p', { className: 'text-sm text-gray-600' }, `${selectedCourse.city || ''}, ${selectedCourse.country || ''}`)
+              h('p', { className: 'text-sm text-gray-600' }, 
+                `${selectedCourse.addr_city || ''}, ${selectedCourse.addr_state || ''} ${selectedCourse.addr_country || ''}`
+              )
             ),
             h('button', {
               onClick: () => {
@@ -497,10 +528,10 @@ function LegsOpenTournament() {
                 selectedTee === tee ? 'border-green-600 bg-green-50' : 'border-gray-300 hover:border-green-400'
               }`
             },
-              h('p', { className: 'font-bold' }, tee.name || `Tee ${index + 1}`),
-              h('p', { className: 'text-sm text-gray-600' }, `Par: ${tee.holes.reduce((sum, h) => sum + h.par, 0)}`),
-              h('p', { className: 'text-sm text-gray-600' }, `Course Rating: ${tee.course_rating || 'N/A'}`),
-              h('p', { className: 'text-sm text-gray-600' }, `Slope: ${tee.slope_rating || 'N/A'}`)
+              h('p', { className: 'font-bold capitalize' }, tee.name),
+              h('p', { className: 'text-sm text-gray-600' }, `Par: ${tee.totalPar || 'N/A'}`),
+              h('p', { className: 'text-sm text-gray-600' }, `Course Rating: ${tee.course_rating}`),
+              h('p', { className: 'text-sm text-gray-600' }, `Slope: ${tee.slope_rating}`)
             ))
           )
         ),
