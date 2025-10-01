@@ -253,10 +253,18 @@ function LegsOpenTournament() {
       const tees = [];
       
       // Add male tees
+      console.log('Checking male tees...');
+      console.log('data.tees exists?', !!data.tees);
+      console.log('data.tees.male exists?', !!(data.tees && data.tees.male));
+      console.log('data.tees.male is array?', Array.isArray(data.tees && data.tees.male));
+      
       if (data.tees && data.tees.male && Array.isArray(data.tees.male)) {
         console.log('Found male tees:', data.tees.male.length);
-        data.tees.male.forEach(tee => {
+        data.tees.male.forEach((tee, index) => {
+          console.log(`Male tee ${index}:`, tee);
+          console.log(`  Has holes? ${!!tee.holes}, Holes length: ${tee.holes ? tee.holes.length : 0}`);
           if (tee.holes && tee.holes.length > 0) {
+            console.log(`  Adding male tee: ${tee.tee_name}`);
             tees.push({
               name: `${tee.tee_name} (Men's)`,
               tee_name: tee.tee_name,
@@ -266,15 +274,21 @@ function LegsOpenTournament() {
               par_total: tee.par_total || tee.holes.reduce((sum, h) => sum + (h.par || 0), 0),
               gender: 'male'
             });
+          } else {
+            console.log(`  Skipping male tee ${tee.tee_name} - no holes data`);
           }
         });
       }
       
       // Add female tees
+      console.log('Checking female tees...');
       if (data.tees && data.tees.female && Array.isArray(data.tees.female)) {
         console.log('Found female tees:', data.tees.female.length);
-        data.tees.female.forEach(tee => {
+        data.tees.female.forEach((tee, index) => {
+          console.log(`Female tee ${index}:`, tee);
+          console.log(`  Has holes? ${!!tee.holes}, Holes length: ${tee.holes ? tee.holes.length : 0}`);
           if (tee.holes && tee.holes.length > 0) {
+            console.log(`  Adding female tee: ${tee.tee_name}`);
             tees.push({
               name: `${tee.tee_name} (Women's)`,
               tee_name: tee.tee_name,
@@ -284,6 +298,8 @@ function LegsOpenTournament() {
               par_total: tee.par_total || tee.holes.reduce((sum, h) => sum + (h.par || 0), 0),
               gender: 'female'
             });
+          } else {
+            console.log(`  Skipping female tee ${tee.tee_name} - no holes data`);
           }
         });
       }
