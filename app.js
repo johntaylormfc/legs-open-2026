@@ -535,6 +535,14 @@ function LegsOpenTournament() {
 
   const addPlayerToTournament = async (playerId) => {
     if (!currentTournament) return;
+
+    // Check if player is already in tournament
+    const alreadyAdded = tournamentPlayers.find(tp => tp.id === playerId);
+    if (alreadyAdded) {
+      alert('Player is already in this tournament');
+      return;
+    }
+
     try {
       await supabase.from('tournament_players').insert([{
         tournament_id: currentTournament.id,
@@ -1345,7 +1353,10 @@ function LegsOpenTournament() {
               h('p', { className: 'text-gray-600 text-sm' }, `Handicap: ${p.handicap}`)
             ),
             h('button', {
-              onClick: () => addPlayerToTournament(p.id),
+              onClick: (e) => {
+                e.stopPropagation();
+                addPlayerToTournament(p.id);
+              },
               className: 'bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800'
             }, 'Add')
           ))
