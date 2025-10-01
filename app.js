@@ -1414,17 +1414,11 @@ useEffect(() => {
                       key: tournament.id,
                       className: 'border border-gray-300 rounded-lg p-4 hover:bg-gray-50'
                     },
-                      h('div', { className: 'flex justify-between items-start mb-2' },
-                        h('div', { className: 'flex-1' },
-                          h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
-                          h('p', { className: 'text-sm text-gray-600' }, `${tournament.year} - ${tournament.course_name}`),
-                          position > 0 && h('p', { className: 'text-sm font-semibold text-blue-700 mt-1' },
-                            `Finished ${getOrdinal(position)} of ${totalPlayers} players`
-                          )
-                        ),
-                        hasScores && h('div', { className: 'text-right' },
-                          h('p', { className: 'text-sm text-gray-600' }, `Net: ${netTotal}`),
-                          h('p', { className: 'text-sm text-gray-600' }, `Gross: ${grossTotal}`)
+                      h('div', { className: 'mb-2' },
+                        h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
+                        h('p', { className: 'text-sm text-gray-600' }, `${tournament.year} - ${tournament.course_name}`),
+                        position > 0 && h('p', { className: 'text-sm font-semibold text-blue-700 mt-1' },
+                          `Finished ${getOrdinal(position)} of ${totalPlayers} players`
                         )
                       ),
                       hasScores && h('div', { className: 'grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-200' },
