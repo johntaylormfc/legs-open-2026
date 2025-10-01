@@ -130,11 +130,18 @@ function LegsOpenTournament() {
   const [selectedTee, setSelectedTee] = useState(null);
   const [searchingCourses, setSearchingCourses] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []); // Run only once on mount
+
+  // Reload data when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   // Save selected tournament ID to localStorage whenever it changes
   useEffect(() => {
