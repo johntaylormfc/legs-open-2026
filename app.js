@@ -105,6 +105,9 @@ function LegsOpenTournament() {
   const [showCreateTournament, setShowCreateTournament] = useState(false);
   const [editingCourse, setEditingCourse] = useState(false);
   const [editingTournament, setEditingTournament] = useState(false);
+  const [manualGroupMode, setManualGroupMode] = useState(false);
+  const [manualGroups, setManualGroups] = useState([]);
+  const [draggedPlayer, setDraggedPlayer] = useState(null);
   const [courseHoles, setCourseHoles] = useState(APP_CONFIG.defaultHoleData);
   const [newTournament, setNewTournament] = useState({
     name: '',
@@ -566,9 +569,11 @@ useEffect(() => {
         newGroups.push({
           tournament_id: currentTournament.id,
           group_number: Math.floor(i / 4) + 1,
+          name: `Group ${Math.floor(i / 4) + 1}`,
           player_ids: groupPlayers.map(p => p.id),
           scorer_id: groupPlayers[0].id,
-          pin: pin
+          pin: pin,
+          tee_time: null
         });
       }
       await supabase.from('groups').delete().eq('tournament_id', currentTournament.id);
@@ -579,6 +584,115 @@ useEffect(() => {
       console.error('Error generating groups:', error);
       alert('Error generating groups: ' + error.message);
     }
+  };
+
+  const startManualGroupCreation = () => {
+    // Initialize with 4 empty groups
+    const initialGroups = Array.from({ length: 4 }, (_, i) => ({
+      id: `temp-${i}`,
+      group_number: i + 1,
+      name: `Group ${i + 1}`,
+      player_ids: [],
+      tee_time: ''
+    }));
+    setManualGroups(initialGroups);
+    setManualGroupMode(true);
+  };
+
+  const addManualGroup = () => {
+    const newGroup = {
+      id: `temp-${Date.now()}`,
+      group_number: manualGroups.length + 1,
+      name: `Group ${manualGroups.length + 1}`,
+      player_ids: [],
+      tee_time: ''
+    };
+    setManualGroups([...manualGroups, newGroup]);
+  };
+
+  const removeManualGroup = (groupId) => {
+    const updatedGroups = manualGroups.filter(g => g.id !== groupId);
+    // Renumber groups
+    const renumbered = updatedGroups.map((g, i) => ({
+      ...g,
+      group_number: i + 1
+    }));
+    setManualGroups(renumbered);
+  };
+
+  const updateManualGroup = (groupId, field, value) => {
+    setManualGroups(manualGroups.map(g =>
+      g.id === groupId ? { ...g, [field]: value } : g
+    ));
+  };
+
+  const addPlayerToManualGroup = (groupId, playerId) => {
+    setManualGroups(manualGroups.map(g =>
+      g.id === groupId ? { ...g, player_ids: [...g.player_ids, playerId] } : g
+    ));
+  };
+
+  const removePlayerFromManualGroup = (groupId, playerId) => {
+    setManualGroups(manualGroups.map(g =>
+      g.id === groupId ? { ...g, player_ids: g.player_ids.filter(id => id !== playerId) } : g
+    ));
+  };
+
+  const saveManualGroups = async () => {
+    if (!currentTournament) return;
+
+    // Validate
+    const assignedPlayers = new Set();
+    for (const group of manualGroups) {
+      if (group.player_ids.length === 0) {
+        alert(`${group.name} has no players. Please add players or remove the group.`);
+        return;
+      }
+      for (const playerId of group.player_ids) {
+        if (assignedPlayers.has(playerId)) {
+          alert('A player cannot be in multiple groups.');
+          return;
+        }
+        assignedPlayers.add(playerId);
+      }
+    }
+
+    try {
+      const usedPins = new Set();
+      const groupsToSave = manualGroups.map((g, i) => {
+        // Generate unique PIN
+        let pin;
+        do {
+          pin = generateRandomPin();
+        } while (usedPins.has(pin));
+        usedPins.add(pin);
+
+        return {
+          tournament_id: currentTournament.id,
+          group_number: i + 1,
+          name: g.name,
+          player_ids: g.player_ids,
+          scorer_id: g.player_ids[0],
+          pin: pin,
+          tee_time: g.tee_time || null
+        };
+      });
+
+      await supabase.from('groups').delete().eq('tournament_id', currentTournament.id);
+      await supabase.from('groups').insert(groupsToSave);
+      await loadData();
+      setManualGroupMode(false);
+      setManualGroups([]);
+      setActiveTab('scoring');
+    } catch (error) {
+      console.error('Error saving manual groups:', error);
+      alert('Error saving groups: ' + error.message);
+    }
+  };
+
+  const cancelManualGroupCreation = () => {
+    setManualGroupMode(false);
+    setManualGroups([]);
   };
 
   const updateScore = async (playerId, hole, strokes) => {
@@ -1199,11 +1313,151 @@ useEffect(() => {
           ))
         )
       ),
-      tournamentPlayers.length >= 4 && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('button', {
-          onClick: generateGroups,
-          className: 'w-full bg-yellow-500 text-white px-6 py-4 rounded-lg hover:bg-yellow-600 font-bold text-lg'
-        }, 'Generate Groups & Start Tournament')
+      tournamentPlayers.length >= 4 && !manualGroupMode && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Create Groups'),
+        h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+          h('button', {
+            onClick: generateGroups,
+            className: 'bg-yellow-500 text-white px-6 py-4 rounded-lg hover:bg-yellow-600 font-bold text-lg flex items-center justify-center gap-2'
+          },
+            h(Icons.Users, { size: 24 }),
+            'Random Groups'
+          ),
+          h('button', {
+            onClick: startManualGroupCreation,
+            className: 'bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 font-bold text-lg flex items-center justify-center gap-2'
+          },
+            h(Icons.Edit, { size: 24 }),
+            'Manual Groups'
+          )
+        ),
+        h('p', { className: 'text-gray-500 text-sm mt-3 text-center' },
+          'Random: Shuffle players into groups | Manual: Drag & drop players'
+        )
+      ),
+
+      // Manual Group Creation UI
+      manualGroupMode && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('div', { className: 'flex justify-between items-center mb-6' },
+          h('h3', { className: 'text-2xl font-bold text-green-800' }, 'Manual Group Creation'),
+          h('div', { className: 'flex gap-2' },
+            h('button', {
+              onClick: addManualGroup,
+              className: 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold flex items-center gap-2'
+            },
+              h(Icons.Plus, { size: 16 }),
+              'Add Group'
+            )
+          )
+        ),
+
+        //Available Players Pool
+        h('div', { className: 'mb-6 p-4 bg-gray-50 rounded-lg' },
+          h('h4', { className: 'font-bold text-gray-700 mb-3' }, 'Available Players'),
+          h('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-2' },
+            (() => {
+              const assignedPlayerIds = new Set(manualGroups.flatMap(g => g.player_ids));
+              const availableForDrag = tournamentPlayers.filter(p => !assignedPlayerIds.has(p.id));
+
+              return availableForDrag.length > 0
+                ? availableForDrag.map(player =>
+                    h('div', {
+                      key: player.id,
+                      draggable: true,
+                      onDragStart: () => setDraggedPlayer(player),
+                      onDragEnd: () => setDraggedPlayer(null),
+                      className: 'bg-white border-2 border-gray-300 p-3 rounded cursor-move hover:border-green-500 hover:shadow-md transition-all'
+                    },
+                      h('p', { className: 'font-semibold text-sm' }, player.name),
+                      h('p', { className: 'text-xs text-gray-500' }, `HCP: ${player.handicap}`)
+                    )
+                  )
+                : h('p', { className: 'text-gray-500 italic col-span-full text-center py-4' }, 'All players assigned to groups')
+            })()
+          )
+        ),
+
+        // Groups
+        h('div', { className: 'space-y-4 mb-6' },
+          manualGroups.map(group =>
+            h('div', {
+              key: group.id,
+              className: 'border-2 border-gray-300 rounded-lg p-4 bg-white',
+              onDragOver: (e) => e.preventDefault(),
+              onDrop: () => {
+                if (draggedPlayer && !group.player_ids.includes(draggedPlayer.id)) {
+                  addPlayerToManualGroup(group.id, draggedPlayer.id);
+                }
+              }
+            },
+              h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4 mb-3' },
+                h('div', null,
+                  h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Group Name'),
+                  h('input', {
+                    type: 'text',
+                    value: group.name,
+                    onChange: (e) => updateManualGroup(group.id, 'name', e.target.value),
+                    className: 'w-full border border-gray-300 p-2 rounded'
+                  })
+                ),
+                h('div', null,
+                  h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Tee Time'),
+                  h('input', {
+                    type: 'time',
+                    value: group.tee_time,
+                    onChange: (e) => updateManualGroup(group.id, 'tee_time', e.target.value),
+                    className: 'w-full border border-gray-300 p-2 rounded'
+                  })
+                ),
+                h('div', { className: 'flex items-end' },
+                  manualGroups.length > 1 && h('button', {
+                    onClick: () => removeManualGroup(group.id),
+                    className: 'w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-semibold flex items-center justify-center gap-2'
+                  },
+                    h(Icons.Trash, { size: 16 }),
+                    'Remove Group'
+                  )
+                )
+              ),
+              h('div', { className: 'mt-3' },
+                h('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' },
+                  `Players (${group.player_ids.length})`
+                ),
+                h('div', { className: 'min-h-[80px] border-2 border-dashed border-gray-300 rounded-lg p-2 bg-gray-50' },
+                  group.player_ids.length > 0
+                    ? h('div', { className: 'flex flex-wrap gap-2' },
+                        group.player_ids.map(playerId => {
+                          const player = allPlayers.find(p => p.id === playerId);
+                          return h('div', {
+                            key: playerId,
+                            className: 'bg-green-100 border border-green-300 px-3 py-1 rounded-full flex items-center gap-2'
+                          },
+                            h('span', { className: 'text-sm font-semibold' }, player?.name),
+                            h('button', {
+                              onClick: () => removePlayerFromManualGroup(group.id, playerId),
+                              className: 'text-red-600 hover:text-red-800 font-bold'
+                            }, '×')
+                          );
+                        })
+                      )
+                    : h('p', { className: 'text-gray-400 italic text-center py-6' }, 'Drag players here')
+                )
+              )
+            )
+          )
+        ),
+
+        // Action Buttons
+        h('div', { className: 'flex gap-4' },
+          h('button', {
+            onClick: saveManualGroups,
+            className: 'flex-1 bg-green-700 text-white px-6 py-4 rounded-lg hover:bg-green-800 font-bold text-lg'
+          }, 'Save Groups & Start Tournament'),
+          h('button', {
+            onClick: cancelManualGroupCreation,
+            className: 'bg-gray-300 text-gray-700 px-6 py-4 rounded-lg hover:bg-gray-400 font-semibold'
+          }, 'Cancel')
+        )
       )
     );
   };
@@ -1230,8 +1484,13 @@ useEffect(() => {
         },
           h('button', {
             onClick: () => setSelectedGroup(group),
-            className: `w-full p-4 rounded-lg font-bold ${selectedGroup?.id === group.id ? 'bg-green-700 text-white' : 'bg-white text-green-800'} classic-shadow hover-lift`
-          }, `Group ${group.group_number}`),
+            className: `w-full p-4 rounded-lg font-bold ${selectedGroup?.id === group.id ? 'bg-green-700 text-white' : 'bg-white text-green-800'} classic-shadow hover-lift text-left`
+          },
+            h('div', null,
+              h('p', { className: 'font-bold' }, group.name || `Group ${group.group_number}`),
+              group.tee_time && h('p', { className: 'text-sm font-normal mt-1' }, `Tee: ${group.tee_time}`)
+            )
+          ),
           userRole === 'admin' && h('p', {
             className: 'text-center mt-1 text-xs font-mono font-bold text-blue-700'
           }, `PIN: ${group.pin}`)
