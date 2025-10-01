@@ -167,11 +167,19 @@ useEffect(() => {
         const sorted = tournamentsRes.data.sort((a, b) => b.year - a.year);
         setTournaments(sorted);
 
-        // Smart tournament selection
+        // Smart tournament selection - only run on initial load
         if (!currentTournament && sorted.length > 0) {
           const selectedTournament = selectSmartTournament(sorted);
           setCurrentTournament(selectedTournament);
           if (selectedTournament.holes) setCourseHoles(selectedTournament.holes);
+        } else if (currentTournament) {
+          // If we already have a selected tournament, update it with fresh data
+          // This preserves the user's selection during periodic reloads
+          const updatedTournament = sorted.find(t => t.id === currentTournament.id);
+          if (updatedTournament) {
+            setCurrentTournament(updatedTournament);
+            if (updatedTournament.holes) setCourseHoles(updatedTournament.holes);
+          }
         }
       }
       
