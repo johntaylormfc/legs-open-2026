@@ -76,6 +76,13 @@ const Icons = {
 const { useState, useEffect, createElement: h } = React;
 
 function LegsOpenTournament() {
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null); // 'admin' or 'group'
+  const [userGroupId, setUserGroupId] = useState(null); // For group users
+  const [enteredPin, setEnteredPin] = useState('');
+  const [pinError, setPinError] = useState('');
+
   const [activeTab, setActiveTab] = useState('tournaments');
   const [tournaments, setTournaments] = useState([]);
   const [currentTournament, setCurrentTournament] = useState(null);
@@ -508,13 +515,24 @@ useEffect(() => {
     try {
       const shuffled = [...tournamentPlayers].sort(() => Math.random() - 0.5);
       const newGroups = [];
+      const usedPins = new Set();
+
       for (let i = 0; i < shuffled.length; i += 4) {
         const groupPlayers = shuffled.slice(i, i + 4);
+
+        // Generate unique PIN for this group
+        let pin;
+        do {
+          pin = generateRandomPin();
+        } while (usedPins.has(pin));
+        usedPins.add(pin);
+
         newGroups.push({
           tournament_id: currentTournament.id,
           group_number: Math.floor(i / 4) + 1,
           player_ids: groupPlayers.map(p => p.id),
-          scorer_id: groupPlayers[0].id
+          scorer_id: groupPlayers[0].id,
+          pin: pin
         });
       }
       await supabase.from('groups').delete().eq('tournament_id', currentTournament.id);
@@ -598,6 +616,50 @@ useEffect(() => {
     const s = ['th', 'st', 'nd', 'rd'];
     const v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  const generateRandomPin = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit PIN
+  };
+
+  const handlePinSubmit = async (e) => {
+    e.preventDefault();
+    setPinError('');
+
+    // Check for admin PIN
+    if (enteredPin === '1991') {
+      setIsAuthenticated(true);
+      setUserRole('admin');
+      setUserGroupId(null);
+      return;
+    }
+
+    // Check for group PIN
+    try {
+      const { data: allGroups, error } = await supabase.from('groups').select('*');
+      if (error) throw error;
+
+      const matchedGroup = allGroups.find(g => g.pin === enteredPin);
+      if (matchedGroup) {
+        setIsAuthenticated(true);
+        setUserRole('group');
+        setUserGroupId(matchedGroup.id);
+        // Set the tournament for this group
+        const groupTournament = tournaments.find(t => t.id === matchedGroup.tournament_id);
+        if (groupTournament) {
+          setCurrentTournament(groupTournament);
+          setActiveTab('scoring');
+        }
+        return;
+      }
+
+      // No match found
+      setPinError('Invalid PIN. Please try again.');
+      setEnteredPin('');
+    } catch (error) {
+      console.error('Error validating PIN:', error);
+      setPinError('Error validating PIN. Please try again.');
+    }
   };
 
   // Render functions
@@ -1106,17 +1168,34 @@ useEffect(() => {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'No groups created yet. Go to Setup tab to generate groups.');
     }
 
+    // Filter groups based on role
+    const visibleGroups = userRole === 'admin'
+      ? groups
+      : groups.filter(g => g.id === userGroupId);
+
     return h('div', { className: 'space-y-6' },
       h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Live Scoring'),
       h('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6' },
-        groups.map(group => h('button', {
+        visibleGroups.map(group => h('div', {
           key: group.id,
-          onClick: () => setSelectedGroup(group),
-          className: `p-4 rounded-lg font-bold ${selectedGroup?.id === group.id ? 'bg-green-700 text-white' : 'bg-white text-green-800'} classic-shadow hover-lift`
-        }, `Group ${group.group_number}`))
+          className: 'relative'
+        },
+          h('button', {
+            onClick: () => setSelectedGroup(group),
+            className: `w-full p-4 rounded-lg font-bold ${selectedGroup?.id === group.id ? 'bg-green-700 text-white' : 'bg-white text-green-800'} classic-shadow hover-lift`
+          }, `Group ${group.group_number}`),
+          userRole === 'admin' && h('p', {
+            className: 'text-center mt-1 text-xs font-mono font-bold text-blue-700'
+          }, `PIN: ${group.pin}`)
+        ))
       ),
       selectedGroup && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, `Group ${selectedGroup.group_number}`),
+        h('div', { className: 'flex justify-between items-center mb-4' },
+          h('h3', { className: 'text-xl font-bold text-green-800' }, `Group ${selectedGroup.group_number}`),
+          userRole === 'admin' && h('p', { className: 'text-sm font-mono font-bold text-blue-700' },
+            `Group PIN: ${selectedGroup.pin}`
+          )
+        ),
         h('div', { className: 'space-y-4' },
           selectedGroup.player_ids.map(playerId => {
             const player = allPlayers.find(p => p.id === playerId);
@@ -1133,13 +1212,15 @@ useEffect(() => {
               h('div', { className: 'grid grid-cols-6 md:grid-cols-9 gap-2' },
                 Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
                   const holeData = courseHoles.find(h => h.hole === hole);
+                  const canEdit = userRole === 'admin' || (userRole === 'group' && selectedGroup.id === userGroupId);
                   return h('div', { key: hole, className: 'flex flex-col' },
                     h('label', { className: 'text-xs text-gray-500 text-center' }, `${hole} (${holeData?.par})`),
                     h('input', {
                       type: 'number',
                       value: playerScores[hole] || '',
-                      onChange: (e) => updateScore(playerId, hole, e.target.value),
-                      className: 'border border-gray-300 p-2 rounded text-center',
+                      onChange: canEdit ? (e) => updateScore(playerId, hole, e.target.value) : undefined,
+                      readOnly: !canEdit,
+                      className: `border border-gray-300 p-2 rounded text-center ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : ''}`,
                       placeholder: '-'
                     })
                   );
@@ -1611,6 +1692,44 @@ useEffect(() => {
     );
   };
 
+  // PIN Entry Screen
+  if (!isAuthenticated) {
+    return h('div', { className: 'min-h-screen hero-pattern flex items-center justify-center p-4' },
+      h('div', { className: 'bg-white rounded-lg classic-shadow p-8 max-w-md w-full' },
+        h('div', { className: 'text-center mb-6' },
+          h(Icons.Trophy, { className: 'text-green-700 mx-auto mb-3', size: 64 }),
+          h('h1', { className: 'text-4xl font-bold text-green-800 mb-2' }, 'THE LEGS OPEN'),
+          h('p', { className: 'text-gray-600' }, 'Please enter your PIN to continue')
+        ),
+        h('form', { onSubmit: handlePinSubmit },
+          h('div', { className: 'mb-4' },
+            h('input', {
+              type: 'password',
+              inputMode: 'numeric',
+              pattern: '[0-9]*',
+              maxLength: 4,
+              placeholder: 'Enter 4-digit PIN',
+              value: enteredPin,
+              onChange: (e) => setEnteredPin(e.target.value.replace(/\D/g, '')),
+              className: 'w-full border-2 border-gray-300 p-4 rounded-lg text-center text-2xl font-bold tracking-widest focus:border-green-600 focus:outline-none',
+              autoFocus: true
+            })
+          ),
+          pinError && h('p', { className: 'text-red-600 text-sm mb-4 text-center' }, pinError),
+          h('button', {
+            type: 'submit',
+            disabled: enteredPin.length !== 4,
+            className: 'w-full bg-green-700 text-white px-6 py-4 rounded-lg hover:bg-green-800 font-bold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed'
+          }, 'Enter')
+        ),
+        h('div', { className: 'mt-6 text-center text-sm text-gray-500' },
+          h('p', null, 'Admin PIN: 1991'),
+          h('p', null, 'Group PINs are provided by tournament organizers')
+        )
+      )
+    );
+  }
+
   if (loading) {
     return h('div', { className: 'min-h-screen hero-pattern flex items-center justify-center' },
       h('div', { className: 'text-white text-xl font-light' }, 'Loading The Legs Open...')
@@ -1655,15 +1774,21 @@ useEffect(() => {
       h('nav', { className: 'bg-white/10 backdrop-blur-sm border-t border-white/20' },
         h('div', { className: 'max-w-7xl mx-auto px-4' },
           h('div', { className: 'flex justify-center gap-1 overflow-x-auto' },
-            ['tournaments', 'course', 'setup', 'scoring', 'leaderboard', 'players', 'history'].map(tab =>
-              h('button', {
-                key: tab,
-                onClick: () => setActiveTab(tab),
-                className: `px-6 py-4 font-semibold uppercase text-sm tracking-wider transition-all whitespace-nowrap ${
-                  activeTab === tab ? 'bg-white text-green-800 border-b-4 border-yellow-500' : 'text-white hover:bg-white/20'
-                }`
-              }, tab)
-            )
+            (() => {
+              const allTabs = ['tournaments', 'course', 'setup', 'scoring', 'leaderboard', 'players', 'history'];
+              const groupTabs = ['scoring', 'leaderboard'];
+              const visibleTabs = userRole === 'admin' ? allTabs : groupTabs;
+
+              return visibleTabs.map(tab =>
+                h('button', {
+                  key: tab,
+                  onClick: () => setActiveTab(tab),
+                  className: `px-6 py-4 font-semibold uppercase text-sm tracking-wider transition-all whitespace-nowrap ${
+                    activeTab === tab ? 'bg-white text-green-800 border-b-4 border-yellow-500' : 'text-white hover:bg-white/20'
+                  }`
+                }, tab)
+              );
+            })()
           )
         )
       )
