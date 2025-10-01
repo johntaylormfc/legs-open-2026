@@ -243,44 +243,55 @@ function LegsOpenTournament() {
         throw new Error(errorData.error || 'Failed to fetch course details');
       }
       const data = await response.json();
+      console.log('Course data received:', data);
       
       // Extract tees from male and female arrays
       const tees = [];
       
       // Add male tees
-      if (data.tees && data.tees.male) {
+      if (data.tees && data.tees.male && Array.isArray(data.tees.male)) {
         data.tees.male.forEach(tee => {
-          tees.push({
-            name: `${tee.tee_name} (Men's)`,
-            tee_name: tee.tee_name,
-            holes: tee.holes || [],
-            slope_rating: tee.slope_rating || 113,
-            course_rating: tee.course_rating || 72,
-            par_total: tee.par_total || 72,
-            gender: 'male'
-          });
+          if (tee.holes && tee.holes.length > 0) {
+            tees.push({
+              name: `${tee.tee_name} (Men's)`,
+              tee_name: tee.tee_name,
+              holes: tee.holes,
+              slope_rating: tee.slope_rating || 113,
+              course_rating: tee.course_rating || 72,
+              par_total: tee.par_total || tee.holes.reduce((sum, h) => sum + (h.par || 0), 0),
+              gender: 'male'
+            });
+          }
         });
       }
       
       // Add female tees
-      if (data.tees && data.tees.female) {
+      if (data.tees && data.tees.female && Array.isArray(data.tees.female)) {
         data.tees.female.forEach(tee => {
-          tees.push({
-            name: `${tee.tee_name} (Women's)`,
-            tee_name: tee.tee_name,
-            holes: tee.holes || [],
-            slope_rating: tee.slope_rating || 113,
-            course_rating: tee.course_rating || 72,
-            par_total: tee.par_total || 72,
-            gender: 'female'
-          });
+          if (tee.holes && tee.holes.length > 0) {
+            tees.push({
+              name: `${tee.tee_name} (Women's)`,
+              tee_name: tee.tee_name,
+              holes: tee.holes,
+              slope_rating: tee.slope_rating || 113,
+              course_rating: tee.course_rating || 72,
+              par_total: tee.par_total || tee.holes.reduce((sum, h) => sum + (h.par || 0), 0),
+              gender: 'female'
+            });
+          }
         });
+      }
+      
+      console.log('Extracted tees:', tees);
+      
+      if (tees.length === 0) {
+        alert('No tee information found for this course. You can enter details manually.');
       }
       
       setAvailableTees(tees);
       setNewTournament({
         ...newTournament,
-        course_name: `${data.club_name}${data.course_name !== data.club_name ? ' - ' + data.course_name : ''}`
+        course_name: `${data.club_name}${data.course_name && data.course_name !== data.club_name ? ' - ' + data.course_name : ''}`
       });
     } catch (error) {
       console.error('Error fetching course details:', error);
@@ -291,6 +302,9 @@ function LegsOpenTournament() {
   const selectTee = (tee) => {
     setSelectedTee(tee);
     
+    console.log('Selected tee:', tee);
+    console.log('Tee holes:', tee.holes);
+    
     // Map the tee data to our hole format
     const holes = tee.holes.map((hole, index) => ({
       hole: index + 1,
@@ -298,11 +312,22 @@ function LegsOpenTournament() {
       strokeIndex: hole.handicap || index + 1
     }));
     
+    console.log('Mapped holes:', holes);
+    
+    const courseName = selectedCourse.club_name + (selectedCourse.course_name && selectedCourse.course_name !== selectedCourse.club_name ? ' - ' + selectedCourse.course_name : '');
+    
     setNewTournament({
       ...newTournament,
-      course_name: selectedCourse.club_name + (selectedCourse.course_name !== selectedCourse.club_name ? ' - ' + selectedCourse.course_name : ''),
+      course_name: courseName,
       slope_rating: tee.slope_rating || 113,
       course_rating: tee.course_rating || 72,
+      holes: holes
+    });
+    
+    console.log('Tournament updated with:', {
+      course_name: courseName,
+      slope_rating: tee.slope_rating,
+      course_rating: tee.course_rating,
       holes: holes
     });
   };
