@@ -145,7 +145,6 @@ function LegsOpenTournament() {
 
   // Save selected tournament ID to localStorage whenever it changes
   useEffect(() => {
-    console.log('useEffect - currentTournament changed:', currentTournament?.id, currentTournament?.name);
     if (currentTournament?.id) {
       const savedId = localStorage.getItem('selectedTournamentId');
       // Only update localStorage if the ID actually changed
@@ -196,28 +195,30 @@ function LegsOpenTournament() {
 
       let activeTournamentId = null;
 
-      if (tournamentsRes.data) {
+      if (tournamentsRes.data && tournamentsRes.data.length > 0) {
         const sorted = tournamentsRes.data.sort((a, b) => b.year - a.year);
         setTournaments(sorted);
 
         // Always check localStorage first as the source of truth
         const savedId = localStorage.getItem('selectedTournamentId');
+        let selectedTournament = null;
 
         if (savedId) {
           // If we have a savedId in localStorage, use it
-          activeTournamentId = savedId;
-          const savedTournament = sorted.find(t => t.id === savedId);
-          if (savedTournament) {
-            setCurrentTournament(savedTournament);
-            if (savedTournament.holes) setCourseHoles(savedTournament.holes);
-          }
-        } else if (sorted.length > 0) {
-          // No savedId - this is initial load, select smart tournament
-          const selectedTournament = selectSmartTournament(sorted);
+          selectedTournament = sorted.find(t => t.id === savedId);
+        }
+
+        if (!selectedTournament) {
+          // No savedId or tournament not found - select smart tournament
+          selectedTournament = selectSmartTournament(sorted);
+          localStorage.setItem('selectedTournamentId', selectedTournament.id);
+        }
+
+        // Always set the tournament state and ID
+        if (selectedTournament) {
           setCurrentTournament(selectedTournament);
           if (selectedTournament.holes) setCourseHoles(selectedTournament.holes);
           activeTournamentId = selectedTournament.id;
-          localStorage.setItem('selectedTournamentId', selectedTournament.id);
         }
       }
 
@@ -1083,7 +1084,6 @@ function LegsOpenTournament() {
   };
 
   const renderCourseTab = () => {
-    console.log('renderCourseTab - currentTournament:', currentTournament?.id, currentTournament?.name);
     if (!currentTournament) {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
     }
@@ -1271,7 +1271,6 @@ function LegsOpenTournament() {
   };
 
   const renderSetupTab = () => {
-    console.log('renderSetupTab - currentTournament:', currentTournament?.id, currentTournament?.name);
     if (!currentTournament) {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
     }
