@@ -2,6 +2,7 @@
 const APP_CONFIG = {
   supabaseUrl: 'https://pygqvtumydxsnybvakkw.supabase.co',
   supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Z3F2dHVteWR4c255YnZha2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTU0MDgsImV4cCI6MjA3NDgzMTQwOH0.gZEXn485fkwjdnedthefsEyhnHiEMO_ZvreS9meiZbg',
+  golfDataApiUrl: 'https://golf-data-api.brewererp.uk',
   defaultHoleData: Array.from({ length: 18 }, (_, i) => ({
     hole: i + 1,
     par: i < 4 || i > 13 ? 4 : (i === 4 || i === 14 ? 3 : 5),
@@ -97,6 +98,12 @@ function LegsOpenTournament() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [courseSearch, setCourseSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [availableTees, setAvailableTees] = useState([]);
+  const [selectedTee, setSelectedTee] = useState(null);
+  const [searchingCourses, setSearchingCourses] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -177,10 +184,76 @@ function LegsOpenTournament() {
         course_rating: 72, 
         holes: APP_CONFIG.defaultHoleData 
       });
+      // Reset course selection
+      setCourseSearch('');
+      setSearchResults([]);
+      setSelectedCourse(null);
+      setAvailableTees([]);
+      setSelectedTee(null);
     } catch (error) {
       console.error('Error creating tournament:', error);
       alert('Error creating tournament: ' + error.message);
     }
+  };
+
+  const searchCourses = async () => {
+    if (!courseSearch.trim() || courseSearch.length < 3) {
+      alert('Please enter at least 3 characters to search');
+      return;
+    }
+    
+    setSearchingCourses(true);
+    try {
+      const response = await fetch(`${APP_CONFIG.golfDataApiUrl}/v1/courses/search?name=${encodeURIComponent(courseSearch)}`);
+      if (!response.ok) throw new Error('Failed to search courses');
+      const data = await response.json();
+      setSearchResults(data.courses || []);
+    } catch (error) {
+      console.error('Error searching courses:', error);
+      alert('Error searching courses: ' + error.message);
+    } finally {
+      setSearchingCourses(false);
+    }
+  };
+
+  const selectCourse = async (course) => {
+    setSelectedCourse(course);
+    setSearchResults([]);
+    
+    try {
+      // Fetch course details including tees
+      const response = await fetch(`${APP_CONFIG.golfDataApiUrl}/v1/courses/${course.id}`);
+      if (!response.ok) throw new Error('Failed to fetch course details');
+      const data = await response.json();
+      
+      setAvailableTees(data.tees || []);
+      setNewTournament({
+        ...newTournament,
+        course_name: course.name
+      });
+    } catch (error) {
+      console.error('Error fetching course details:', error);
+      alert('Error loading course details: ' + error.message);
+    }
+  };
+
+  const selectTee = (tee) => {
+    setSelectedTee(tee);
+    
+    // Map the tee data to our hole format
+    const holes = tee.holes.map((hole, index) => ({
+      hole: index + 1,
+      par: hole.par,
+      strokeIndex: hole.stroke_index || index + 1
+    }));
+    
+    setNewTournament({
+      ...newTournament,
+      course_name: selectedCourse.name,
+      slope_rating: tee.slope_rating || 113,
+      course_rating: tee.course_rating || 72,
+      holes: holes
+    });
   };
 
   const updateCourseDetails = async () => {
@@ -340,7 +413,9 @@ function LegsOpenTournament() {
       ),
       showCreateTournament && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
         h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'New Tournament'),
-        h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+        
+        // Tournament Name and Year
+        h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4 mb-4' },
           h('input', {
             type: 'text',
             placeholder: 'Tournament Name',
@@ -354,29 +429,127 @@ function LegsOpenTournament() {
             value: newTournament.year,
             onChange: (e) => setNewTournament({ ...newTournament, year: parseInt(e.target.value) }),
             className: 'border border-gray-300 p-3 rounded-lg'
-          }),
-          h('input', {
-            type: 'text',
-            placeholder: 'Course Name',
-            value: newTournament.course_name,
-            onChange: (e) => setNewTournament({ ...newTournament, course_name: e.target.value }),
-            className: 'border border-gray-300 p-3 rounded-lg'
-          }),
-          h('input', {
-            type: 'number',
-            placeholder: 'Slope Rating',
-            value: newTournament.slope_rating,
-            onChange: (e) => setNewTournament({ ...newTournament, slope_rating: parseInt(e.target.value) }),
-            className: 'border border-gray-300 p-3 rounded-lg'
           })
         ),
+        
+        // Course Search Section
+        h('div', { className: 'mb-4' },
+          h('h4', { className: 'font-semibold mb-2 text-green-800' }, 'Search for Course'),
+          h('div', { className: 'flex gap-2' },
+            h('input', {
+              type: 'text',
+              placeholder: 'Search course name (e.g., St Andrews)',
+              value: courseSearch,
+              onChange: (e) => setCourseSearch(e.target.value),
+              onKeyPress: (e) => e.key === 'Enter' && searchCourses(),
+              className: 'flex-1 border border-gray-300 p-3 rounded-lg'
+            }),
+            h('button', {
+              onClick: searchCourses,
+              disabled: searchingCourses,
+              className: 'bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400'
+            }, searchingCourses ? 'Searching...' : 'Search')
+          )
+        ),
+        
+        // Search Results
+        searchResults.length > 0 && h('div', { className: 'mb-4 border border-gray-300 rounded-lg p-4 max-h-60 overflow-y-auto' },
+          h('h4', { className: 'font-semibold mb-2 text-green-800' }, 'Search Results'),
+          h('div', { className: 'space-y-2' },
+            searchResults.map(course => h('div', {
+              key: course.id,
+              onClick: () => selectCourse(course),
+              className: 'p-3 border border-gray-200 rounded hover:bg-green-50 cursor-pointer'
+            },
+              h('p', { className: 'font-semibold' }, course.name),
+              h('p', { className: 'text-sm text-gray-600' }, `${course.city || ''}, ${course.country || ''}`)
+            ))
+          )
+        ),
+        
+        // Selected Course
+        selectedCourse && h('div', { className: 'mb-4 p-4 bg-green-50 border border-green-200 rounded-lg' },
+          h('div', { className: 'flex justify-between items-start' },
+            h('div', null,
+              h('h4', { className: 'font-semibold text-green-800' }, 'Selected Course'),
+              h('p', { className: 'font-bold' }, selectedCourse.name),
+              h('p', { className: 'text-sm text-gray-600' }, `${selectedCourse.city || ''}, ${selectedCourse.country || ''}`)
+            ),
+            h('button', {
+              onClick: () => {
+                setSelectedCourse(null);
+                setAvailableTees([]);
+                setSelectedTee(null);
+              },
+              className: 'text-red-600 hover:text-red-800'
+            }, 'Clear')
+          )
+        ),
+        
+        // Available Tees
+        availableTees.length > 0 && h('div', { className: 'mb-4' },
+          h('h4', { className: 'font-semibold mb-2 text-green-800' }, 'Select Tees'),
+          h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-3' },
+            availableTees.map((tee, index) => h('div', {
+              key: index,
+              onClick: () => selectTee(tee),
+              className: `p-4 border-2 rounded-lg cursor-pointer ${
+                selectedTee === tee ? 'border-green-600 bg-green-50' : 'border-gray-300 hover:border-green-400'
+              }`
+            },
+              h('p', { className: 'font-bold' }, tee.name || `Tee ${index + 1}`),
+              h('p', { className: 'text-sm text-gray-600' }, `Par: ${tee.holes.reduce((sum, h) => sum + h.par, 0)}`),
+              h('p', { className: 'text-sm text-gray-600' }, `Course Rating: ${tee.course_rating || 'N/A'}`),
+              h('p', { className: 'text-sm text-gray-600' }, `Slope: ${tee.slope_rating || 'N/A'}`)
+            ))
+          )
+        ),
+        
+        // Manual Entry (fallback)
+        !selectedCourse && h('div', { className: 'mb-4' },
+          h('h4', { className: 'font-semibold mb-2 text-green-800' }, 'Or Enter Manually'),
+          h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4' },
+            h('input', {
+              type: 'text',
+              placeholder: 'Course Name',
+              value: newTournament.course_name,
+              onChange: (e) => setNewTournament({ ...newTournament, course_name: e.target.value }),
+              className: 'border border-gray-300 p-3 rounded-lg'
+            }),
+            h('input', {
+              type: 'number',
+              placeholder: 'Slope Rating',
+              value: newTournament.slope_rating,
+              onChange: (e) => setNewTournament({ ...newTournament, slope_rating: parseInt(e.target.value) }),
+              className: 'border border-gray-300 p-3 rounded-lg'
+            }),
+            h('input', {
+              type: 'number',
+              step: '0.1',
+              placeholder: 'Course Rating',
+              value: newTournament.course_rating,
+              onChange: (e) => setNewTournament({ ...newTournament, course_rating: parseFloat(e.target.value) }),
+              className: 'border border-gray-300 p-3 rounded-lg'
+            })
+          )
+        ),
+        
+        // Action Buttons
         h('div', { className: 'flex gap-4 mt-4' },
           h('button', {
             onClick: createTournament,
-            className: 'bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 font-semibold'
-          }, 'Create'),
+            disabled: !newTournament.name || !newTournament.course_name,
+            className: 'bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 font-semibold disabled:bg-gray-400'
+          }, 'Create Tournament'),
           h('button', {
-            onClick: () => setShowCreateTournament(false),
+            onClick: () => {
+              setShowCreateTournament(false);
+              setCourseSearch('');
+              setSearchResults([]);
+              setSelectedCourse(null);
+              setAvailableTees([]);
+              setSelectedTee(null);
+            },
             className: 'bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 font-semibold'
           }, 'Cancel')
         )
