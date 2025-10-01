@@ -105,13 +105,57 @@ function LegsOpenTournament() {
   const [availableTees, setAvailableTees] = useState([]);
   const [selectedTee, setSelectedTee] = useState(null);
   const [searchingCourses, setSearchingCourses] = useState(false);
+  const [playerHistory, setPlayerHistory] = useState([]);
+const [loadingHistory, setLoadingHistory] = useState(false);
 
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 5000);
-    return () => clearInterval(interval);
-  }, [currentTournament]);
-
+useEffect(() => {
+  if (!selectedPlayer) return;
+  const loadHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const { data: allScores } = await supabase.from('scores').select('*');
+      const { data: tpData } = await supabase.from('tournament_players').select('*');
+      
+      const history = tournaments.filter(t => 
+        tpData?.some(tp => tp.player_id === selectedPlayer.id && tp.tournament_id === t.id)
+      ).map(tournament => {
+        const tournamentScores = {};
+        allScores?.filter(s => 
+          s.tournament_id === tournament.id && s.player_id === selectedPlayer.id
+        ).forEach(score => {
+          tournamentScores[score.hole] = score.strokes;
+        });
+        
+        const grossTotal = Object.values(tournamentScores).reduce((sum, s) => sum + s, 0);
+        const playingHandicap = calculatePlayingHandicap(selectedPlayer.handicap);
+        const netTotal = grossTotal - playingHandicap;
+        
+        let stablefordTotal = 0;
+        const tournamentHoles = tournament.holes || APP_CONFIG.defaultHoleData;
+        for (let hole = 1; hole <= 18; hole++) {
+          if (tournamentScores[hole]) {
+            const holeData = tournamentHoles.find(h => h.hole === hole);
+            if (holeData) {
+              const strokesReceived = playingHandicap >= holeData.strokeIndex ? 
+                Math.floor(playingHandicap / 18) + 1 : Math.floor(playingHandicap / 18);
+              const netScore = tournamentScores[hole] - strokesReceived;
+              stablefordTotal += Math.max(0, 2 + (holeData.par - netScore));
+            }
+          }
+        }
+        
+        return { tournament, grossTotal, netTotal, stablefordTotal, hasScores: grossTotal > 0 };
+      });
+      
+      setPlayerHistory(history);
+    } catch (error) {
+      console.error('Error loading player history:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+  loadHistory();
+}, [selectedPlayer]);
   const loadData = async () => {
     try {
       const tournamentsRes = await supabase.from('tournaments').select('*');
