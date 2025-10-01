@@ -70,6 +70,13 @@ const Icons = {
     React.createElement('svg', { className, width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
       React.createElement('circle', { cx: 12, cy: 8, r: 7 }),
       React.createElement('polyline', { points: '8.21 13.89 7 23 12 20 17 23 15.79 13.88' })
+    ),
+  Trash: ({ className, size = 24 }) =>
+    React.createElement('svg', { className, width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+      React.createElement('polyline', { points: '3 6 5 6 21 6' }),
+      React.createElement('path', { d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' }),
+      React.createElement('line', { x1: 10, y1: 11, x2: 10, y2: 17 }),
+      React.createElement('line', { x1: 14, y1: 11, x2: 14, y2: 17 })
     )
 };
 
@@ -457,6 +464,35 @@ useEffect(() => {
     } catch (error) {
       console.error('Error updating tournament:', error);
       alert('Error updating tournament: ' + error.message);
+    }
+  };
+
+  const deleteTournament = async (tournamentId, tournamentName) => {
+    // Confirmation dialog
+    const confirmMessage = `Are you sure you want to delete "${tournamentName}"?\n\nThis will permanently delete:\n- The tournament\n- All groups\n- All scores\n- Player assignments\n\nThis action cannot be undone!`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      // Delete in order: scores -> groups -> tournament_players -> tournament
+      await supabase.from('scores').delete().eq('tournament_id', tournamentId);
+      await supabase.from('groups').delete().eq('tournament_id', tournamentId);
+      await supabase.from('tournament_players').delete().eq('tournament_id', tournamentId);
+      await supabase.from('tournaments').delete().eq('id', tournamentId);
+
+      // If we just deleted the current tournament, clear it
+      if (currentTournament?.id === tournamentId) {
+        setCurrentTournament(null);
+        localStorage.removeItem('selectedTournamentId');
+      }
+
+      await loadData();
+      alert('Tournament deleted successfully');
+    } catch (error) {
+      console.error('Error deleting tournament:', error);
+      alert('Error deleting tournament: ' + error.message);
     }
   };
 
@@ -882,13 +918,25 @@ useEffect(() => {
               'Active Tournament'
             )
           ),
-          !t.is_active && (t.status === 'upcoming' || t.status === 'active') && h('button', {
-            onClick: (e) => {
-              e.stopPropagation();
-              setTournamentActive(t.id);
+          h('div', { className: 'mt-3 pt-3 border-t border-gray-200 flex gap-2' },
+            !t.is_active && (t.status === 'upcoming' || t.status === 'active') && h('button', {
+              onClick: (e) => {
+                e.stopPropagation();
+                setTournamentActive(t.id);
+              },
+              className: 'flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-semibold'
+            }, 'Set as Active'),
+            userRole === 'admin' && h('button', {
+              onClick: (e) => {
+                e.stopPropagation();
+                deleteTournament(t.id, t.name);
+              },
+              className: 'bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm font-semibold flex items-center gap-2'
             },
-            className: 'mt-3 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-semibold'
-          }, 'Set as Active')
+              h(Icons.Trash, { size: 16 }),
+              'Delete'
+            )
+          )
         ))
       )
     );
