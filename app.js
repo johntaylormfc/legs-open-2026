@@ -192,26 +192,34 @@ useEffect(() => {
         const sorted = tournamentsRes.data.sort((a, b) => b.year - a.year);
         setTournaments(sorted);
 
+        // Always check localStorage first
+        const savedId = localStorage.getItem('selectedTournamentId');
+        console.log('LoadData - savedId from localStorage:', savedId);
+        console.log('LoadData - currentTournament?.id:', currentTournament?.id);
+
         // Smart tournament selection - only run on initial load
         if (!currentTournament && sorted.length > 0) {
           const selectedTournament = selectSmartTournament(sorted);
+          console.log('LoadData - Initial load, selected tournament:', selectedTournament?.id, selectedTournament?.name);
           setCurrentTournament(selectedTournament);
           if (selectedTournament.holes) setCourseHoles(selectedTournament.holes);
           activeTournamentId = selectedTournament.id;
-        } else {
-          // Use localStorage to determine which tournament to load data for
-          const savedId = localStorage.getItem('selectedTournamentId');
-          activeTournamentId = savedId || currentTournament?.id;
-
-          // Update currentTournament state if it doesn't match localStorage
-          if (savedId && currentTournament?.id !== savedId) {
-            const savedTournament = sorted.find(t => t.id === savedId);
-            if (savedTournament) {
-              setCurrentTournament(savedTournament);
-              if (savedTournament.holes) setCourseHoles(savedTournament.holes);
-            }
+        } else if (savedId) {
+          // Always use savedId if available
+          activeTournamentId = savedId;
+          const savedTournament = sorted.find(t => t.id === savedId);
+          console.log('LoadData - Using savedId, found tournament:', savedTournament?.id, savedTournament?.name);
+          if (savedTournament && currentTournament?.id !== savedId) {
+            console.log('LoadData - Updating currentTournament state to match localStorage');
+            setCurrentTournament(savedTournament);
+            if (savedTournament.holes) setCourseHoles(savedTournament.holes);
           }
+        } else {
+          activeTournamentId = currentTournament?.id;
+          console.log('LoadData - Using currentTournament?.id:', activeTournamentId);
         }
+
+        console.log('LoadData - Final activeTournamentId:', activeTournamentId);
       }
 
       if (playersRes.data) {
