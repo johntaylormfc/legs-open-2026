@@ -1,7 +1,7 @@
 // Configuration - REPLACE THESE WITH YOUR ACTUAL SUPABASE CREDENTIALS
 const APP_CONFIG = {
-  supabaseUrl: 'https://your-project.supabase.co',
-  supabaseKey: 'your-anon-key-here',
+  supabaseUrl: 'https://pygqvtumydxsnybvakkw.supabase.co',
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Z3F2dHVteWR4c255YnZha2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTU0MDgsImV4cCI6MjA3NDgzMTQwOH0.gZEXn485fkwjdnedthefsEyhnHiEMO_ZvreS9meiZbg',
   defaultHoleData: Array.from({ length: 18 }, (_, i) => ({
     hole: i + 1,
     par: i < 4 || i > 13 ? 4 : (i === 4 || i === 14 ? 3 : 5),
