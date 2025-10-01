@@ -234,7 +234,6 @@ function LegsOpenTournament() {
     
     try {
       console.log('Fetching course details for ID:', course.id);
-      // Fetch detailed course information including tees
       const response = await fetch(`${APP_CONFIG.golfApiUrl}/v1/courses/${course.id}`, {
         headers: {
           'Authorization': `Key ${APP_CONFIG.golfApiKey}`
@@ -246,25 +245,22 @@ function LegsOpenTournament() {
         console.error('Error response:', errorData);
         throw new Error(errorData.error || 'Failed to fetch course details');
       }
-      const data = await response.json();
-      console.log('Course data received:', data);
+      const responseData = await response.json();
+      console.log('Full response:', responseData);
+      
+      // The API returns data wrapped in a "course" object
+      const data = responseData.course || responseData;
+      console.log('Course data:', data);
       
       // Extract tees from male and female arrays
       const tees = [];
       
       // Add male tees
-      console.log('Checking male tees...');
-      console.log('data.tees exists?', !!data.tees);
-      console.log('data.tees.male exists?', !!(data.tees && data.tees.male));
-      console.log('data.tees.male is array?', Array.isArray(data.tees && data.tees.male));
-      
       if (data.tees && data.tees.male && Array.isArray(data.tees.male)) {
         console.log('Found male tees:', data.tees.male.length);
         data.tees.male.forEach((tee, index) => {
-          console.log(`Male tee ${index}:`, tee);
-          console.log(`  Has holes? ${!!tee.holes}, Holes length: ${tee.holes ? tee.holes.length : 0}`);
+          console.log(`Male tee ${index}:`, tee.tee_name, 'has', tee.holes?.length, 'holes');
           if (tee.holes && tee.holes.length > 0) {
-            console.log(`  Adding male tee: ${tee.tee_name}`);
             tees.push({
               name: `${tee.tee_name} (Men's)`,
               tee_name: tee.tee_name,
@@ -274,21 +270,16 @@ function LegsOpenTournament() {
               par_total: tee.par_total || tee.holes.reduce((sum, h) => sum + (h.par || 0), 0),
               gender: 'male'
             });
-          } else {
-            console.log(`  Skipping male tee ${tee.tee_name} - no holes data`);
           }
         });
       }
       
       // Add female tees
-      console.log('Checking female tees...');
       if (data.tees && data.tees.female && Array.isArray(data.tees.female)) {
         console.log('Found female tees:', data.tees.female.length);
         data.tees.female.forEach((tee, index) => {
-          console.log(`Female tee ${index}:`, tee);
-          console.log(`  Has holes? ${!!tee.holes}, Holes length: ${tee.holes ? tee.holes.length : 0}`);
+          console.log(`Female tee ${index}:`, tee.tee_name, 'has', tee.holes?.length, 'holes');
           if (tee.holes && tee.holes.length > 0) {
-            console.log(`  Adding female tee: ${tee.tee_name}`);
             tees.push({
               name: `${tee.tee_name} (Women's)`,
               tee_name: tee.tee_name,
@@ -298,14 +289,12 @@ function LegsOpenTournament() {
               par_total: tee.par_total || tee.holes.reduce((sum, h) => sum + (h.par || 0), 0),
               gender: 'female'
             });
-          } else {
-            console.log(`  Skipping female tee ${tee.tee_name} - no holes data`);
           }
         });
       }
       
-      console.log('Extracted tees:', tees);
-      console.log('Number of tees found:', tees.length);
+      console.log('Total tees extracted:', tees.length);
+      console.log('Tees:', tees);
       
       if (tees.length === 0) {
         alert('No tee information found for this course. You can enter details manually.');
