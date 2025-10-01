@@ -199,34 +199,25 @@ function LegsOpenTournament() {
         const sorted = tournamentsRes.data.sort((a, b) => b.year - a.year);
         setTournaments(sorted);
 
-        // Always check localStorage first
+        // Always check localStorage first as the source of truth
         const savedId = localStorage.getItem('selectedTournamentId');
-        console.log('LoadData - savedId from localStorage:', savedId);
-        console.log('LoadData - currentTournament?.id:', currentTournament?.id);
 
-        // Smart tournament selection - only run on initial load
-        if (!currentTournament && sorted.length > 0) {
-          const selectedTournament = selectSmartTournament(sorted);
-          console.log('LoadData - Initial load, selected tournament:', selectedTournament?.id, selectedTournament?.name);
-          setCurrentTournament(selectedTournament);
-          if (selectedTournament.holes) setCourseHoles(selectedTournament.holes);
-          activeTournamentId = selectedTournament.id;
-        } else if (savedId) {
-          // Always use savedId if available
+        if (savedId) {
+          // If we have a savedId in localStorage, use it
           activeTournamentId = savedId;
           const savedTournament = sorted.find(t => t.id === savedId);
-          console.log('LoadData - Using savedId, found tournament:', savedTournament?.id, savedTournament?.name);
-          if (savedTournament && currentTournament?.id !== savedId) {
-            console.log('LoadData - Updating currentTournament state to match localStorage');
+          if (savedTournament) {
             setCurrentTournament(savedTournament);
             if (savedTournament.holes) setCourseHoles(savedTournament.holes);
           }
-        } else {
-          activeTournamentId = currentTournament?.id;
-          console.log('LoadData - Using currentTournament?.id:', activeTournamentId);
+        } else if (sorted.length > 0) {
+          // No savedId - this is initial load, select smart tournament
+          const selectedTournament = selectSmartTournament(sorted);
+          setCurrentTournament(selectedTournament);
+          if (selectedTournament.holes) setCourseHoles(selectedTournament.holes);
+          activeTournamentId = selectedTournament.id;
+          localStorage.setItem('selectedTournamentId', selectedTournament.id);
         }
-
-        console.log('LoadData - Final activeTournamentId:', activeTournamentId);
       }
 
       if (playersRes.data) {
