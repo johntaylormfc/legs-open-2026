@@ -187,7 +187,11 @@ useEffect(() => {
       // Load all scores for player history (always, not just for current tournament)
       const scoresRes = await supabase.from('scores').select('*');
       if (scoresRes.data) {
+        console.log('[loadData] Loaded all scores:', scoresRes.data.length, 'total scores');
+        console.log('[loadData] Sample score:', scoresRes.data[0]);
         setAllScores(scoresRes.data);
+      } else {
+        console.log('[loadData] No scores data or error:', scoresRes.error);
       }
 
       if (currentTournament) {
