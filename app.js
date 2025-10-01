@@ -145,6 +145,7 @@ function LegsOpenTournament() {
 
   // Save selected tournament ID to localStorage whenever it changes
   useEffect(() => {
+    console.log('useEffect - currentTournament changed:', currentTournament?.id, currentTournament?.name);
     if (currentTournament?.id) {
       const savedId = localStorage.getItem('selectedTournamentId');
       // Only update localStorage if the ID actually changed
@@ -1082,6 +1083,7 @@ function LegsOpenTournament() {
   };
 
   const renderCourseTab = () => {
+    console.log('renderCourseTab - currentTournament:', currentTournament?.id, currentTournament?.name);
     if (!currentTournament) {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
     }
@@ -1269,6 +1271,7 @@ function LegsOpenTournament() {
   };
 
   const renderSetupTab = () => {
+    console.log('renderSetupTab - currentTournament:', currentTournament?.id, currentTournament?.name);
     if (!currentTournament) {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
     }
