@@ -83,6 +83,7 @@ function LegsOpenTournament() {
   const [tournamentPlayers, setTournamentPlayers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [scores, setScores] = useState({});
+  const [allScores, setAllScores] = useState([]); // Store all scores for historical data
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [newPlayer, setNewPlayer] = useState({ name: '', handicap: '', cdh: '', bio: '', photo_url: '' });
@@ -183,12 +184,17 @@ useEffect(() => {
         setAllPlayers(playersRes.data.sort((a, b) => a.name.localeCompare(b.name)));
       }
 
+      // Load all scores for player history (always, not just for current tournament)
+      const scoresRes = await supabase.from('scores').select('*');
+      if (scoresRes.data) {
+        setAllScores(scoresRes.data);
+      }
+
       if (currentTournament) {
         if (currentTournament.holes) setCourseHoles(currentTournament.holes);
-        
+
         const tPlayersRes = await supabase.from('tournament_players').select('*');
         const groupsRes = await supabase.from('groups').select('*');
-        const scoresRes = await supabase.from('scores').select('*');
 
         if (tPlayersRes.data && playersRes.data) {
           const filtered = tPlayersRes.data.filter(tp => tp.tournament_id === currentTournament.id);
@@ -202,6 +208,7 @@ useEffect(() => {
           setGroups(filtered.sort((a, b) => a.group_number - b.group_number));
         }
 
+        // Filter scores for current tournament only
         if (scoresRes.data) {
           const filtered = scoresRes.data.filter(s => s.tournament_id === currentTournament.id);
           const scoresMap = {};
@@ -1228,31 +1235,37 @@ useEffect(() => {
       
       selectedPlayer && (() => {
         // Calculate player's tournament history
-        const playerTournaments = tournaments.filter(tournament => {
-          // Find if player participated in this tournament
-          return tournamentPlayers.some(tp => tp.id === selectedPlayer.id);
-        }).map(tournament => {
-          // Get player's scores for this tournament
-          const playerScores = scores[selectedPlayer.id] || {};
+        const playerTournaments = tournaments.map(tournament => {
+          // Get player's scores for THIS specific tournament (not current tournament)
+          const tournamentScores = allScores.filter(s =>
+            s.tournament_id === tournament.id && s.player_id === selectedPlayer.id
+          );
+
+          // Build scores map for this tournament
+          const playerScores = {};
+          tournamentScores.forEach(score => {
+            playerScores[score.hole] = score.strokes;
+          });
+
           const grossTotal = Object.values(playerScores).reduce((sum, s) => sum + s, 0);
           const playingHandicap = calculatePlayingHandicap(selectedPlayer.handicap);
           const netTotal = grossTotal - playingHandicap;
-          
+
           let stablefordTotal = 0;
           const tournamentHoles = tournament.holes || APP_CONFIG.defaultHoleData;
           for (let hole = 1; hole <= 18; hole++) {
             if (playerScores[hole]) {
               const holeData = tournamentHoles.find(h => h.hole === hole);
               if (holeData) {
-                const strokesReceived = playingHandicap >= holeData.strokeIndex ? 
-                  Math.floor(playingHandicap / 18) + 1 : 
+                const strokesReceived = playingHandicap >= holeData.strokeIndex ?
+                  Math.floor(playingHandicap / 18) + 1 :
                   Math.floor(playingHandicap / 18);
                 const netScore = playerScores[hole] - strokesReceived;
                 stablefordTotal += Math.max(0, 2 + (holeData.par - netScore));
               }
             }
           }
-          
+
           return {
             tournament,
             grossTotal,
@@ -1260,7 +1273,7 @@ useEffect(() => {
             stablefordTotal,
             hasScores: grossTotal > 0
           };
-        });
+        }).filter(pt => pt.hasScores); // Only show tournaments where player has scores
 
         const handleImageUpload = (e) => {
           const file = e.target.files[0];
