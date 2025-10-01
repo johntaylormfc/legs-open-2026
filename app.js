@@ -117,12 +117,16 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, []); // Run only once on mount
 
-  // Save selected tournament to localStorage whenever it changes
+  // Save selected tournament ID to localStorage whenever it changes
   useEffect(() => {
     if (currentTournament?.id) {
-      localStorage.setItem('selectedTournamentId', currentTournament.id);
+      const savedId = localStorage.getItem('selectedTournamentId');
+      // Only update localStorage if the ID actually changed
+      if (savedId !== currentTournament.id) {
+        localStorage.setItem('selectedTournamentId', currentTournament.id);
+      }
     }
-  }, [currentTournament]);
+  }, [currentTournament?.id]); // Only track ID changes, not the whole object
   
   const selectSmartTournament = (tournaments) => {
     // Priority order for selecting the "current" tournament:
@@ -172,14 +176,6 @@ useEffect(() => {
           const selectedTournament = selectSmartTournament(sorted);
           setCurrentTournament(selectedTournament);
           if (selectedTournament.holes) setCourseHoles(selectedTournament.holes);
-        } else if (currentTournament) {
-          // If we already have a selected tournament, update it with fresh data
-          // This preserves the user's selection during periodic reloads
-          const updatedTournament = sorted.find(t => t.id === currentTournament.id);
-          if (updatedTournament) {
-            setCurrentTournament(updatedTournament);
-            if (updatedTournament.holes) setCourseHoles(updatedTournament.holes);
-          }
         }
       }
       
