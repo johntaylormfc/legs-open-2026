@@ -110,8 +110,7 @@ useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
-  }, []); 
-
+  }, []); // Run only once on mount
   
   const loadData = async () => {
     try {
