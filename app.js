@@ -143,6 +143,8 @@ useEffect(() => {
       // Only update localStorage if the ID actually changed
       if (savedId !== currentTournament.id) {
         localStorage.setItem('selectedTournamentId', currentTournament.id);
+        // Immediately reload data for the new tournament
+        loadData();
       }
     }
   }, [currentTournament?.id]); // Only track ID changes, not the whole object
