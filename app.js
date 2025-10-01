@@ -186,6 +186,8 @@ useEffect(() => {
       const playersRes = await supabase.from('players').select('*');
       if (playersRes.error) throw new Error(`Players error: ${playersRes.error.message}`);
 
+      let activeTournamentId = null;
+
       if (tournamentsRes.data) {
         const sorted = tournamentsRes.data.sort((a, b) => b.year - a.year);
         setTournaments(sorted);
@@ -195,9 +197,14 @@ useEffect(() => {
           const selectedTournament = selectSmartTournament(sorted);
           setCurrentTournament(selectedTournament);
           if (selectedTournament.holes) setCourseHoles(selectedTournament.holes);
+          activeTournamentId = selectedTournament.id;
+        } else {
+          // Use localStorage to determine which tournament to load data for
+          const savedId = localStorage.getItem('selectedTournamentId');
+          activeTournamentId = savedId || currentTournament?.id;
         }
       }
-      
+
       if (playersRes.data) {
         setAllPlayers(playersRes.data.sort((a, b) => a.name.localeCompare(b.name)));
       }
@@ -208,27 +215,26 @@ useEffect(() => {
         setAllScores(scoresRes.data);
       }
 
-      if (currentTournament) {
-        if (currentTournament.holes) setCourseHoles(currentTournament.holes);
-
+      // Load tournament-specific data using activeTournamentId instead of state
+      if (activeTournamentId) {
         const tPlayersRes = await supabase.from('tournament_players').select('*');
         const groupsRes = await supabase.from('groups').select('*');
 
         if (tPlayersRes.data && playersRes.data) {
-          const filtered = tPlayersRes.data.filter(tp => tp.tournament_id === currentTournament.id);
+          const filtered = tPlayersRes.data.filter(tp => tp.tournament_id === activeTournamentId);
           const playerIds = filtered.map(tp => tp.player_id);
           const players = playersRes.data.filter(p => playerIds.includes(p.id));
           setTournamentPlayers(players);
         }
 
         if (groupsRes.data) {
-          const filtered = groupsRes.data.filter(g => g.tournament_id === currentTournament.id);
+          const filtered = groupsRes.data.filter(g => g.tournament_id === activeTournamentId);
           setGroups(filtered.sort((a, b) => a.group_number - b.group_number));
         }
 
         // Filter scores for current tournament only
         if (scoresRes.data) {
-          const filtered = scoresRes.data.filter(s => s.tournament_id === currentTournament.id);
+          const filtered = scoresRes.data.filter(s => s.tournament_id === activeTournamentId);
           const scoresMap = {};
           filtered.forEach(score => {
             if (!scoresMap[score.player_id]) scoresMap[score.player_id] = {};
