@@ -143,8 +143,6 @@ useEffect(() => {
       // Only update localStorage if the ID actually changed
       if (savedId !== currentTournament.id) {
         localStorage.setItem('selectedTournamentId', currentTournament.id);
-        // Immediately reload data for the new tournament
-        loadData();
       }
     }
   }, [currentTournament?.id]); // Only track ID changes, not the whole object
@@ -1025,7 +1023,11 @@ useEffect(() => {
       h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
         tournaments.map(t => h('div', {
           key: t.id,
-          onClick: () => setCurrentTournament(t),
+          onClick: () => {
+            localStorage.setItem('selectedTournamentId', t.id);
+            setCurrentTournament(t);
+            loadData();
+          },
           className: `bg-white p-6 rounded-lg classic-shadow hover-lift cursor-pointer ${currentTournament?.id === t.id ? 'ring-4 ring-green-500' : ''}`
         },
           h('div', { className: 'flex justify-between items-start mb-2' },
