@@ -228,18 +228,22 @@ function LegsOpenTournament() {
   };
 
   const selectCourse = async (course) => {
+    console.log('selectCourse called with:', course);
     setSelectedCourse(course);
     setSearchResults([]);
     
     try {
+      console.log('Fetching course details for ID:', course.id);
       // Fetch detailed course information including tees
       const response = await fetch(`${APP_CONFIG.golfApiUrl}/v1/courses/${course.id}`, {
         headers: {
           'Authorization': `Key ${APP_CONFIG.golfApiKey}`
         }
       });
+      console.log('Response status:', response.status);
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Error response:', errorData);
         throw new Error(errorData.error || 'Failed to fetch course details');
       }
       const data = await response.json();
@@ -250,6 +254,7 @@ function LegsOpenTournament() {
       
       // Add male tees
       if (data.tees && data.tees.male && Array.isArray(data.tees.male)) {
+        console.log('Found male tees:', data.tees.male.length);
         data.tees.male.forEach(tee => {
           if (tee.holes && tee.holes.length > 0) {
             tees.push({
@@ -267,6 +272,7 @@ function LegsOpenTournament() {
       
       // Add female tees
       if (data.tees && data.tees.female && Array.isArray(data.tees.female)) {
+        console.log('Found female tees:', data.tees.female.length);
         data.tees.female.forEach(tee => {
           if (tee.holes && tee.holes.length > 0) {
             tees.push({
@@ -283,6 +289,7 @@ function LegsOpenTournament() {
       }
       
       console.log('Extracted tees:', tees);
+      console.log('Number of tees found:', tees.length);
       
       if (tees.length === 0) {
         alert('No tee information found for this course. You can enter details manually.');
