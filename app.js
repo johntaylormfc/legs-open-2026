@@ -1,4 +1,4 @@
-// Configuration - REPLACE THESE WITH YOUR ACTUAL SUPABASE CREDENTIALS
+// Configuration
 const APP_CONFIG = {
   supabaseUrl: 'https://pygqvtumydxsnybvakkw.supabase.co',
   supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Z3F2dHVteWR4c255YnZha2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTU0MDgsImV4cCI6MjA3NDgzMTQwOH0.gZEXn485fkwjdnedthefsEyhnHiEMO_ZvreS9meiZbg',
@@ -205,14 +205,20 @@ function LegsOpenTournament() {
     
     setSearchingCourses(true);
     try {
-      const response = await fetch(`${APP_CONFIG.golfApiUrl}/course?name=${encodeURIComponent(courseSearch)}`, {
+      const response = await fetch(`${APP_CONFIG.golfApiUrl}/v1/search?search_query=${encodeURIComponent(courseSearch)}`, {
         headers: {
-          'x-api-key': APP_CONFIG.golfApiKey
+          'Authorization': `Key ${APP_CONFIG.golfApiKey}`
         }
       });
-      if (!response.ok) throw new Error('Failed to search courses');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to search courses');
+      }
       const data = await response.json();
       setSearchResults(data.courses || []);
+      if (data.courses && data.courses.length === 0) {
+        alert('No courses found. Try a different search term.');
+      }
     } catch (error) {
       console.error('Error searching courses:', error);
       alert('Error searching courses: ' + error.message);
@@ -226,37 +232,55 @@ function LegsOpenTournament() {
     setSearchResults([]);
     
     try {
-      // Fetch detailed course information including scorecard
-      const response = await fetch(`${APP_CONFIG.golfApiUrl}/course/${course.id}`, {
+      // Fetch detailed course information including tees
+      const response = await fetch(`${APP_CONFIG.golfApiUrl}/v1/courses/${course.id}`, {
         headers: {
-          'x-api-key': APP_CONFIG.golfApiKey
+          'Authorization': `Key ${APP_CONFIG.golfApiKey}`
         }
       });
-      if (!response.ok) throw new Error('Failed to fetch course details');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch course details');
+      }
       const data = await response.json();
       
-      // Extract tees from scorecard data
+      // Extract tees from male and female arrays
       const tees = [];
-      if (data.data && data.data.scorecard) {
-        // The API returns scorecard with different tee types
-        Object.keys(data.data.scorecard).forEach(teeName => {
-          const teeData = data.data.scorecard[teeName];
-          if (teeData && Array.isArray(teeData.holes)) {
-            tees.push({
-              name: teeName,
-              holes: teeData.holes,
-              slope_rating: teeData.slope || 113,
-              course_rating: teeData.rating || 72,
-              totalPar: teeData.holes.reduce((sum, h) => sum + (h.toPar || 0), 0)
-            });
-          }
+      
+      // Add male tees
+      if (data.tees && data.tees.male) {
+        data.tees.male.forEach(tee => {
+          tees.push({
+            name: `${tee.tee_name} (Men's)`,
+            tee_name: tee.tee_name,
+            holes: tee.holes || [],
+            slope_rating: tee.slope_rating || 113,
+            course_rating: tee.course_rating || 72,
+            par_total: tee.par_total || 72,
+            gender: 'male'
+          });
+        });
+      }
+      
+      // Add female tees
+      if (data.tees && data.tees.female) {
+        data.tees.female.forEach(tee => {
+          tees.push({
+            name: `${tee.tee_name} (Women's)`,
+            tee_name: tee.tee_name,
+            holes: tee.holes || [],
+            slope_rating: tee.slope_rating || 113,
+            course_rating: tee.course_rating || 72,
+            par_total: tee.par_total || 72,
+            gender: 'female'
+          });
         });
       }
       
       setAvailableTees(tees);
       setNewTournament({
         ...newTournament,
-        course_name: course.name
+        course_name: `${data.club_name}${data.course_name !== data.club_name ? ' - ' + data.course_name : ''}`
       });
     } catch (error) {
       console.error('Error fetching course details:', error);
@@ -269,14 +293,14 @@ function LegsOpenTournament() {
     
     // Map the tee data to our hole format
     const holes = tee.holes.map((hole, index) => ({
-      hole: hole.hole || index + 1,
-      par: hole.toPar || 4,
-      strokeIndex: hole.hcp || index + 1
+      hole: index + 1,
+      par: hole.par || 4,
+      strokeIndex: hole.handicap || index + 1
     }));
     
     setNewTournament({
       ...newTournament,
-      course_name: selectedCourse.name,
+      course_name: selectedCourse.club_name + (selectedCourse.course_name !== selectedCourse.club_name ? ' - ' + selectedCourse.course_name : ''),
       slope_rating: tee.slope_rating || 113,
       course_rating: tee.course_rating || 72,
       holes: holes
@@ -488,9 +512,10 @@ function LegsOpenTournament() {
               onClick: () => selectCourse(course),
               className: 'p-3 border border-gray-200 rounded hover:bg-green-50 cursor-pointer'
             },
-              h('p', { className: 'font-semibold' }, course.name),
+              h('p', { className: 'font-semibold' }, course.club_name),
+              course.course_name !== course.club_name && h('p', { className: 'text-sm text-gray-500' }, course.course_name),
               h('p', { className: 'text-sm text-gray-600' }, 
-                `${course.addr_city || ''}, ${course.addr_state || ''} ${course.addr_country || ''}`
+                course.location ? `${course.location.city || ''}, ${course.location.state || ''}, ${course.location.country || ''}` : ''
               )
             ))
           )
@@ -501,9 +526,10 @@ function LegsOpenTournament() {
           h('div', { className: 'flex justify-between items-start' },
             h('div', null,
               h('h4', { className: 'font-semibold text-green-800' }, 'Selected Course'),
-              h('p', { className: 'font-bold' }, selectedCourse.name),
+              h('p', { className: 'font-bold' }, selectedCourse.club_name),
+              selectedCourse.course_name !== selectedCourse.club_name && h('p', { className: 'text-sm text-gray-500' }, selectedCourse.course_name),
               h('p', { className: 'text-sm text-gray-600' }, 
-                `${selectedCourse.addr_city || ''}, ${selectedCourse.addr_state || ''} ${selectedCourse.addr_country || ''}`
+                selectedCourse.location ? `${selectedCourse.location.city || ''}, ${selectedCourse.location.state || ''}, ${selectedCourse.location.country || ''}` : ''
               )
             ),
             h('button', {
@@ -528,8 +554,8 @@ function LegsOpenTournament() {
                 selectedTee === tee ? 'border-green-600 bg-green-50' : 'border-gray-300 hover:border-green-400'
               }`
             },
-              h('p', { className: 'font-bold capitalize' }, tee.name),
-              h('p', { className: 'text-sm text-gray-600' }, `Par: ${tee.totalPar || 'N/A'}`),
+              h('p', { className: 'font-bold' }, tee.name),
+              h('p', { className: 'text-sm text-gray-600' }, `Par: ${tee.par_total}`),
               h('p', { className: 'text-sm text-gray-600' }, `Course Rating: ${tee.course_rating}`),
               h('p', { className: 'text-sm text-gray-600' }, `Slope: ${tee.slope_rating}`)
             ))
