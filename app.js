@@ -1,7 +1,7 @@
 // Configuration - REPLACE THESE WITH YOUR ACTUAL SUPABASE CREDENTIALS
 const APP_CONFIG = {
-  supabaseUrl: 'https://pygqvtumydxsnybvakkw.supabase.co',
-  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Z3F2dHVteWR4c255YnZha2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTU0MDgsImV4cCI6MjA3NDgzMTQwOH0.gZEXn485fkwjdnedthefsEyhnHiEMO_ZvreS9meiZbg',
+  supabaseUrl: 'https://your-project.supabase.co',
+  supabaseKey: 'your-anon-key-here',
   defaultHoleData: Array.from({ length: 18 }, (_, i) => ({
     hole: i + 1,
     par: i < 4 || i > 13 ? 4 : (i === 4 || i === 14 ? 3 : 5),
@@ -106,20 +106,11 @@ function LegsOpenTournament() {
 
   const loadData = async () => {
     try {
-      console.log('Loading data...');
       const tournamentsRes = await supabase.from('tournaments').select('*');
-      console.log('Tournaments response:', tournamentsRes);
-      
-      if (tournamentsRes.error) {
-        throw new Error(`Tournaments error: ${tournamentsRes.error.message}`);
-      }
+      if (tournamentsRes.error) throw new Error(`Tournaments error: ${tournamentsRes.error.message}`);
       
       const playersRes = await supabase.from('players').select('*');
-      console.log('Players response:', playersRes);
-      
-      if (playersRes.error) {
-        throw new Error(`Players error: ${playersRes.error.message}`);
-      }
+      if (playersRes.error) throw new Error(`Players error: ${playersRes.error.message}`);
       
       if (tournamentsRes.data) {
         const sorted = tournamentsRes.data.sort((a, b) => b.year - a.year);
@@ -337,6 +328,454 @@ function LegsOpenTournament() {
 
   const getTotalPar = () => courseHoles.reduce((sum, h) => sum + h.par, 0);
 
+  // Render functions
+  const renderTournamentsTab = () => {
+    return h('div', { className: 'space-y-6' },
+      h('div', { className: 'flex justify-between items-center' },
+        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Tournaments'),
+        h('button', {
+          onClick: () => setShowCreateTournament(true),
+          className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
+        }, h(Icons.Plus, { size: 20 }), 'Create Tournament')
+      ),
+      showCreateTournament && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'New Tournament'),
+        h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+          h('input', {
+            type: 'text',
+            placeholder: 'Tournament Name',
+            value: newTournament.name,
+            onChange: (e) => setNewTournament({ ...newTournament, name: e.target.value }),
+            className: 'border border-gray-300 p-3 rounded-lg'
+          }),
+          h('input', {
+            type: 'number',
+            placeholder: 'Year',
+            value: newTournament.year,
+            onChange: (e) => setNewTournament({ ...newTournament, year: parseInt(e.target.value) }),
+            className: 'border border-gray-300 p-3 rounded-lg'
+          }),
+          h('input', {
+            type: 'text',
+            placeholder: 'Course Name',
+            value: newTournament.course_name,
+            onChange: (e) => setNewTournament({ ...newTournament, course_name: e.target.value }),
+            className: 'border border-gray-300 p-3 rounded-lg'
+          }),
+          h('input', {
+            type: 'number',
+            placeholder: 'Slope Rating',
+            value: newTournament.slope_rating,
+            onChange: (e) => setNewTournament({ ...newTournament, slope_rating: parseInt(e.target.value) }),
+            className: 'border border-gray-300 p-3 rounded-lg'
+          })
+        ),
+        h('div', { className: 'flex gap-4 mt-4' },
+          h('button', {
+            onClick: createTournament,
+            className: 'bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 font-semibold'
+          }, 'Create'),
+          h('button', {
+            onClick: () => setShowCreateTournament(false),
+            className: 'bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 font-semibold'
+          }, 'Cancel')
+        )
+      ),
+      h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
+        tournaments.map(t => h('div', {
+          key: t.id,
+          onClick: () => setCurrentTournament(t),
+          className: `bg-white p-6 rounded-lg classic-shadow hover-lift cursor-pointer ${currentTournament?.id === t.id ? 'ring-4 ring-green-500' : ''}`
+        },
+          h('h3', { className: 'text-xl font-bold text-green-800 mb-2' }, t.name),
+          h('p', { className: 'text-gray-600' }, `Year: ${t.year}`),
+          h('p', { className: 'text-gray-600' }, `Course: ${t.course_name || 'Not set'}`)
+        ))
+      )
+    );
+  };
+
+  const renderCourseTab = () => {
+    if (!currentTournament) {
+      return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
+    }
+    return h('div', { className: 'space-y-6' },
+      h('div', { className: 'flex justify-between items-center' },
+        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Course Details'),
+        h('button', {
+          onClick: () => setEditingCourse(!editingCourse),
+          className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
+        }, h(Icons.Edit, { size: 20 }), editingCourse ? 'Cancel' : 'Edit Course')
+      ),
+      h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        editingCourse ? h('div', { className: 'space-y-4' },
+          h('input', {
+            type: 'text',
+            placeholder: 'Course Name',
+            value: currentTournament.course_name || '',
+            onChange: (e) => setCurrentTournament({ ...currentTournament, course_name: e.target.value }),
+            className: 'w-full border border-gray-300 p-3 rounded-lg'
+          }),
+          h('div', { className: 'grid grid-cols-2 gap-4' },
+            h('input', {
+              type: 'number',
+              placeholder: 'Slope Rating',
+              value: currentTournament.slope_rating,
+              onChange: (e) => setCurrentTournament({ ...currentTournament, slope_rating: parseInt(e.target.value) }),
+              className: 'border border-gray-300 p-3 rounded-lg'
+            }),
+            h('input', {
+              type: 'number',
+              placeholder: 'Course Rating',
+              value: currentTournament.course_rating,
+              onChange: (e) => setCurrentTournament({ ...currentTournament, course_rating: parseFloat(e.target.value) }),
+              className: 'border border-gray-300 p-3 rounded-lg'
+            })
+          ),
+          h('button', {
+            onClick: updateCourseDetails,
+            className: 'bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 font-semibold'
+          }, 'Save Details')
+        ) : h('div', null,
+          h('h3', { className: 'text-2xl font-bold mb-2' }, currentTournament.course_name || 'Course Name Not Set'),
+          h('p', { className: 'text-gray-600' }, `Slope Rating: ${currentTournament.slope_rating}`),
+          h('p', { className: 'text-gray-600' }, `Course Rating: ${currentTournament.course_rating}`),
+          h('p', { className: 'text-gray-600 font-semibold mt-2' }, `Total Par: ${getTotalPar()}`)
+        )
+      ),
+      h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Hole Details'),
+        h('div', { className: 'overflow-x-auto' },
+          h('table', { className: 'w-full' },
+            h('thead', null,
+              h('tr', { className: 'border-b-2 border-green-700' },
+                h('th', { className: 'p-2 text-left' }, 'Hole'),
+                h('th', { className: 'p-2 text-center' }, 'Par'),
+                h('th', { className: 'p-2 text-center' }, 'Stroke Index')
+              )
+            ),
+            h('tbody', null,
+              courseHoles.map(hole => h('tr', {
+                key: hole.hole,
+                className: 'border-b border-gray-200'
+              },
+                h('td', { className: 'p-2 font-semibold' }, hole.hole),
+                editingCourse ? h('td', { className: 'p-2' },
+                  h('input', {
+                    type: 'number',
+                    value: hole.par,
+                    onChange: (e) => {
+                      const updated = [...courseHoles];
+                      updated[hole.hole - 1].par = parseInt(e.target.value);
+                      setCourseHoles(updated);
+                    },
+                    className: 'w-20 border border-gray-300 p-1 rounded text-center'
+                  })
+                ) : h('td', { className: 'p-2 text-center' }, hole.par),
+                editingCourse ? h('td', { className: 'p-2' },
+                  h('input', {
+                    type: 'number',
+                    value: hole.strokeIndex,
+                    onChange: (e) => {
+                      const updated = [...courseHoles];
+                      updated[hole.hole - 1].strokeIndex = parseInt(e.target.value);
+                      setCourseHoles(updated);
+                    },
+                    className: 'w-20 border border-gray-300 p-1 rounded text-center'
+                  })
+                ) : h('td', { className: 'p-2 text-center' }, hole.strokeIndex)
+              ))
+            )
+          )
+        )
+      )
+    );
+  };
+
+  const renderSetupTab = () => {
+    if (!currentTournament) {
+      return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
+    }
+    const availablePlayers = allPlayers.filter(p => !tournamentPlayers.find(tp => tp.id === p.id));
+    
+    return h('div', { className: 'space-y-6' },
+      h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Tournament Setup'),
+      h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Add New Player'),
+        h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4' },
+          h('input', {
+            type: 'text',
+            placeholder: 'Name',
+            value: newPlayer.name,
+            onChange: (e) => setNewPlayer({ ...newPlayer, name: e.target.value }),
+            className: 'border border-gray-300 p-3 rounded-lg'
+          }),
+          h('input', {
+            type: 'number',
+            step: '0.1',
+            placeholder: 'Handicap',
+            value: newPlayer.handicap,
+            onChange: (e) => setNewPlayer({ ...newPlayer, handicap: e.target.value }),
+            className: 'border border-gray-300 p-3 rounded-lg'
+          }),
+          h('input', {
+            type: 'text',
+            placeholder: 'CDH Number',
+            value: newPlayer.cdh,
+            onChange: (e) => setNewPlayer({ ...newPlayer, cdh: e.target.value }),
+            className: 'border border-gray-300 p-3 rounded-lg'
+          })
+        ),
+        h('button', {
+          onClick: createNewPlayer,
+          className: 'mt-4 bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 font-semibold'
+        }, 'Add Player')
+      ),
+      h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Tournament Players'),
+        tournamentPlayers.length === 0 ? h('p', { className: 'text-gray-500 text-center py-4' }, 'No players added yet') :
+        h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+          tournamentPlayers.map(p => h('div', {
+            key: p.id,
+            className: 'border border-gray-300 p-4 rounded-lg'
+          },
+            h('p', { className: 'font-bold text-lg' }, p.name),
+            h('p', { className: 'text-gray-600' }, `Handicap: ${p.handicap}`)
+          ))
+        )
+      ),
+      availablePlayers.length > 0 && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Add Existing Players'),
+        h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+          availablePlayers.map(p => h('div', {
+            key: p.id,
+            className: 'border border-gray-300 p-4 rounded-lg flex justify-between items-center'
+          },
+            h('div', null,
+              h('p', { className: 'font-bold' }, p.name),
+              h('p', { className: 'text-gray-600 text-sm' }, `Handicap: ${p.handicap}`)
+            ),
+            h('button', {
+              onClick: () => addPlayerToTournament(p.id),
+              className: 'bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800'
+            }, 'Add')
+          ))
+        )
+      ),
+      tournamentPlayers.length >= 4 && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('button', {
+          onClick: generateGroups,
+          className: 'w-full bg-yellow-500 text-white px-6 py-4 rounded-lg hover:bg-yellow-600 font-bold text-lg'
+        }, 'Generate Groups & Start Tournament')
+      )
+    );
+  };
+
+  const renderScoringTab = () => {
+    if (!currentTournament) {
+      return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
+    }
+    if (groups.length === 0) {
+      return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'No groups created yet. Go to Setup tab to generate groups.');
+    }
+
+    return h('div', { className: 'space-y-6' },
+      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Live Scoring'),
+      h('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6' },
+        groups.map(group => h('button', {
+          key: group.id,
+          onClick: () => setSelectedGroup(group),
+          className: `p-4 rounded-lg font-bold ${selectedGroup?.id === group.id ? 'bg-green-700 text-white' : 'bg-white text-green-800'} classic-shadow hover-lift`
+        }, `Group ${group.group_number}`))
+      ),
+      selectedGroup && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, `Group ${selectedGroup.group_number}`),
+        h('div', { className: 'space-y-4' },
+          selectedGroup.player_ids.map(playerId => {
+            const player = allPlayers.find(p => p.id === playerId);
+            if (!player) return null;
+            const playerScores = scores[playerId] || {};
+            return h('div', {
+              key: playerId,
+              className: 'border-b border-gray-200 pb-4'
+            },
+              h('div', { className: 'flex justify-between items-center mb-2' },
+                h('h4', { className: 'font-bold text-lg' }, player.name),
+                h('span', { className: 'text-gray-600' }, `HCP: ${player.handicap}`)
+              ),
+              h('div', { className: 'grid grid-cols-6 md:grid-cols-9 gap-2' },
+                Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
+                  const holeData = courseHoles.find(h => h.hole === hole);
+                  return h('div', { key: hole, className: 'flex flex-col' },
+                    h('label', { className: 'text-xs text-gray-500 text-center' }, `${hole} (${holeData?.par})`),
+                    h('input', {
+                      type: 'number',
+                      value: playerScores[hole] || '',
+                      onChange: (e) => updateScore(playerId, hole, e.target.value),
+                      className: 'border border-gray-300 p-2 rounded text-center',
+                      placeholder: '-'
+                    })
+                  );
+                })
+              )
+            );
+          })
+        )
+      )
+    );
+  };
+
+  const renderLeaderboardTab = () => {
+    if (!currentTournament) {
+      return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
+    }
+    const { results, medalWinner, stablefordWinner } = calculateResults();
+    
+    return h('div', { className: 'space-y-6' },
+      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Leaderboard'),
+      
+      medalWinner && h('div', { className: 'bg-gradient-to-r from-yellow-400 to-yellow-600 p-6 rounded-lg classic-shadow text-white' },
+        h('div', { className: 'flex items-center gap-3 mb-2' },
+          h(Icons.Trophy, { size: 32 }),
+          h('h3', { className: 'text-2xl font-bold' }, 'Medal Winner')
+        ),
+        h('p', { className: 'text-3xl font-bold' }, medalWinner.name),
+        h('p', { className: 'text-xl' }, `Net Score: ${medalWinner.netTotal} (Gross: ${medalWinner.grossTotal})`)
+      ),
+      
+      stablefordWinner && h('div', { className: 'bg-gradient-to-r from-green-500 to-green-700 p-6 rounded-lg classic-shadow text-white' },
+        h('div', { className: 'flex items-center gap-3 mb-2' },
+          h(Icons.Award, { size: 32 }),
+          h('h3', { className: 'text-2xl font-bold' }, 'Stableford Winner')
+        ),
+        h('p', { className: 'text-3xl font-bold' }, stablefordWinner.name),
+        h('p', { className: 'text-xl' }, `Points: ${stablefordWinner.stablefordTotal}`)
+      ),
+      
+      results.length === 0 ? h('div', { className: 'bg-white p-8 rounded-lg classic-shadow text-center text-gray-500' },
+        h('p', { className: 'text-xl' }, 'No scores entered yet')
+      ) :
+      h('div', { className: 'bg-white rounded-lg classic-shadow overflow-hidden' },
+        h('div', { className: 'overflow-x-auto' },
+          h('table', { className: 'w-full' },
+            h('thead', { className: 'bg-green-700 text-white' },
+              h('tr', null,
+                h('th', { className: 'p-3 text-left' }, 'Position'),
+                h('th', { className: 'p-3 text-left' }, 'Player'),
+                h('th', { className: 'p-3 text-center' }, 'HCP'),
+                h('th', { className: 'p-3 text-center' }, 'Playing HCP'),
+                h('th', { className: 'p-3 text-center' }, 'Gross'),
+                h('th', { className: 'p-3 text-center' }, 'Net'),
+                h('th', { className: 'p-3 text-center' }, 'Stableford')
+              )
+            ),
+            h('tbody', null,
+              results.map((player, index) => h('tr', {
+                key: player.id,
+                className: 'border-b border-gray-200 hover:bg-gray-50'
+              },
+                h('td', { className: 'p-3 font-bold' }, index + 1),
+                h('td', { className: 'p-3' }, player.name),
+                h('td', { className: 'p-3 text-center' }, player.handicap.toFixed(1)),
+                h('td', { className: 'p-3 text-center' }, player.playingHandicap),
+                h('td', { className: 'p-3 text-center' }, player.grossTotal),
+                h('td', { className: 'p-3 text-center font-bold' }, player.netTotal),
+                h('td', { className: 'p-3 text-center' }, player.stablefordTotal)
+              ))
+            )
+          )
+        )
+      )
+    );
+  };
+
+  const renderPlayersTab = () => {
+    return h('div', { className: 'space-y-6' },
+      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Player Profiles'),
+      allPlayers.length === 0 ? h('div', { className: 'text-center text-gray-500 text-xl py-12' }, 'No players yet. Go to Setup to add players.') :
+      h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
+        allPlayers.map(player => h('div', {
+          key: player.id,
+          onClick: () => setSelectedPlayer(player),
+          className: 'bg-white p-6 rounded-lg classic-shadow hover-lift cursor-pointer'
+        },
+          player.photo_url && h('img', {
+            src: player.photo_url,
+            alt: player.name,
+            className: 'w-24 h-24 rounded-full mx-auto mb-4 object-cover'
+          }),
+          h('h3', { className: 'text-xl font-bold text-center text-green-800' }, player.name),
+          h('p', { className: 'text-center text-gray-600' }, `Handicap: ${player.handicap}`),
+          player.cdh_number && h('p', { className: 'text-center text-gray-500 text-sm' }, `CDH: ${player.cdh_number}`),
+          player.bio && h('p', { className: 'text-center text-gray-600 text-sm mt-2 line-clamp-2' }, player.bio)
+        ))
+      ),
+      
+      selectedPlayer && h('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' },
+        h('div', { className: 'bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto' },
+          h('div', { className: 'flex justify-between items-start mb-4' },
+            h('h3', { className: 'text-2xl font-bold text-green-800' }, selectedPlayer.name),
+            h('button', {
+              onClick: () => setSelectedPlayer(null),
+              className: 'text-gray-500 hover:text-gray-700 text-2xl'
+            }, '×')
+          ),
+          h('div', { className: 'space-y-4' },
+            h('input', {
+              type: 'text',
+              placeholder: 'Photo URL',
+              value: selectedPlayer.photo_url || '',
+              onChange: (e) => setSelectedPlayer({ ...selectedPlayer, photo_url: e.target.value }),
+              className: 'w-full border border-gray-300 p-3 rounded-lg'
+            }),
+            h('textarea', {
+              placeholder: 'Bio',
+              value: selectedPlayer.bio || '',
+              onChange: (e) => setSelectedPlayer({ ...selectedPlayer, bio: e.target.value }),
+              className: 'w-full border border-gray-300 p-3 rounded-lg h-32'
+            }),
+            h('button', {
+              onClick: () => {
+                updatePlayerBio(selectedPlayer);
+                setSelectedPlayer(null);
+              },
+              className: 'w-full bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 font-semibold'
+            }, 'Save Changes')
+          )
+        )
+      )
+    );
+  };
+
+  const renderHistoryTab = () => {
+    return h('div', { className: 'space-y-6' },
+      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Tournament History'),
+      tournaments.length === 0 ? h('div', { className: 'text-center text-gray-500 text-xl py-12' }, 'No tournaments yet') :
+      h('div', { className: 'space-y-4' },
+        tournaments.map(tournament => {
+          return h('div', {
+            key: tournament.id,
+            className: 'bg-white p-6 rounded-lg classic-shadow'
+          },
+            h('div', { className: 'flex justify-between items-center mb-4' },
+              h('div', null,
+                h('h3', { className: 'text-2xl font-bold text-green-800' }, tournament.name),
+                h('p', { className: 'text-gray-600' }, `${tournament.year} - ${tournament.course_name || 'Course TBD'}`)
+              ),
+              h('button', {
+                onClick: () => {
+                  setCurrentTournament(tournament);
+                  setActiveTab('leaderboard');
+                },
+                className: 'bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800'
+              }, 'View Results')
+            )
+          );
+        })
+      )
+    );
+  };
+
   if (loading) {
     return h('div', { className: 'min-h-screen hero-pattern flex items-center justify-center' },
       h('div', { className: 'text-white text-xl font-light' }, 'Loading The Legs Open...')
@@ -365,9 +804,6 @@ function LegsOpenTournament() {
     );
   }
 
-  // Rest of the render functions from the previous complete version...
-  // (Including all the tab rendering functions)
-  
   return h('div', { className: 'min-h-screen bg-gray-50' },
     h('header', { className: 'hero-pattern text-white sticky top-0 z-50 classic-shadow' },
       h('div', { className: 'max-w-7xl mx-auto px-4 py-8' },
@@ -398,15 +834,13 @@ function LegsOpenTournament() {
       )
     ),
     h('main', { className: 'max-w-7xl mx-auto px-4 py-8' },
-      h('div', { className: 'bg-white p-8 rounded-lg shadow' },
-        h('h2', { className: 'text-2xl font-bold text-green-800 mb-4' }, 'App Successfully Loaded!'),
-        h('p', { className: 'text-gray-700 mb-4' }, 
-          `Connected to Supabase. Found ${tournaments.length} tournament(s) and ${allPlayers.length} player(s).`
-        ),
-        h('p', { className: 'text-gray-600' }, 
-          'The full UI rendering code needs to be added back from the complete version. This debug version confirms the app is loading correctly.'
-        )
-      )
+      activeTab === 'tournaments' && renderTournamentsTab(),
+      activeTab === 'course' && renderCourseTab(),
+      activeTab === 'setup' && renderSetupTab(),
+      activeTab === 'scoring' && renderScoringTab(),
+      activeTab === 'leaderboard' && renderLeaderboardTab(),
+      activeTab === 'players' && renderPlayersTab(),
+      activeTab === 'history' && renderHistoryTab()
     )
   );
 }
