@@ -88,14 +88,19 @@ function LegsOpenTournament() {
   const [newPlayer, setNewPlayer] = useState({ name: '', handicap: '', cdh: '', bio: '', photo_url: '' });
   const [showCreateTournament, setShowCreateTournament] = useState(false);
   const [editingCourse, setEditingCourse] = useState(false);
+  const [editingTournament, setEditingTournament] = useState(false);
   const [courseHoles, setCourseHoles] = useState(APP_CONFIG.defaultHoleData);
-  const [newTournament, setNewTournament] = useState({ 
-    name: '', 
-    year: new Date().getFullYear(), 
-    course_name: '', 
-    slope_rating: 113, 
-    course_rating: 72, 
-    holes: APP_CONFIG.defaultHoleData 
+  const [newTournament, setNewTournament] = useState({
+    name: '',
+    year: new Date().getFullYear(),
+    course_name: '',
+    slope_rating: 113,
+    course_rating: 72,
+    holes: APP_CONFIG.defaultHoleData,
+    start_date: '',
+    end_date: '',
+    is_active: false,
+    status: 'upcoming'
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -111,21 +116,62 @@ useEffect(() => {
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []); // Run only once on mount
+
+  // Save selected tournament to localStorage whenever it changes
+  useEffect(() => {
+    if (currentTournament?.id) {
+      localStorage.setItem('selectedTournamentId', currentTournament.id);
+    }
+  }, [currentTournament]);
   
+  const selectSmartTournament = (tournaments) => {
+    // Priority order for selecting the "current" tournament:
+    // 1. Previously selected tournament from localStorage (if still exists)
+    // 2. Active tournament (is_active = true)
+    // 3. Most recent tournament with scores
+    // 4. Newest tournament by year
+
+    const savedTournamentId = localStorage.getItem('selectedTournamentId');
+
+    // Try to restore previously selected tournament
+    if (savedTournamentId) {
+      const savedTournament = tournaments.find(t => t.id === savedTournamentId);
+      if (savedTournament) return savedTournament;
+    }
+
+    // Find active tournament
+    const activeTournament = tournaments.find(t => t.is_active === true);
+    if (activeTournament) return activeTournament;
+
+    // Find most recent tournament with scores (we'll check this later when scores load)
+    // For now, just return the newest by year
+    const sorted = [...tournaments].sort((a, b) => {
+      // Sort by year descending, then by start_date descending
+      if (b.year !== a.year) return b.year - a.year;
+      if (b.start_date && a.start_date) return new Date(b.start_date) - new Date(a.start_date);
+      return 0;
+    });
+
+    return sorted[0];
+  };
+
   const loadData = async () => {
     try {
       const tournamentsRes = await supabase.from('tournaments').select('*');
       if (tournamentsRes.error) throw new Error(`Tournaments error: ${tournamentsRes.error.message}`);
-      
+
       const playersRes = await supabase.from('players').select('*');
       if (playersRes.error) throw new Error(`Players error: ${playersRes.error.message}`);
-      
+
       if (tournamentsRes.data) {
         const sorted = tournamentsRes.data.sort((a, b) => b.year - a.year);
         setTournaments(sorted);
+
+        // Smart tournament selection
         if (!currentTournament && sorted.length > 0) {
-          setCurrentTournament(sorted[0]);
-          if (sorted[0].holes) setCourseHoles(sorted[0].holes);
+          const selectedTournament = selectSmartTournament(sorted);
+          setCurrentTournament(selectedTournament);
+          if (selectedTournament.holes) setCourseHoles(selectedTournament.holes);
         }
       }
       
@@ -177,13 +223,17 @@ useEffect(() => {
       await supabase.from('tournaments').insert([newTournament]);
       await loadData();
       setShowCreateTournament(false);
-      setNewTournament({ 
-        name: '', 
-        year: new Date().getFullYear(), 
-        course_name: '', 
-        slope_rating: 113, 
-        course_rating: 72, 
-        holes: APP_CONFIG.defaultHoleData 
+      setNewTournament({
+        name: '',
+        year: new Date().getFullYear(),
+        course_name: '',
+        slope_rating: 113,
+        course_rating: 72,
+        holes: APP_CONFIG.defaultHoleData,
+        start_date: '',
+        end_date: '',
+        is_active: false,
+        status: 'upcoming'
       });
       // Reset course selection
       setCourseSearch('');
@@ -361,6 +411,36 @@ useEffect(() => {
     }
   };
 
+  const setTournamentActive = async (tournamentId) => {
+    try {
+      // Set this tournament as active (database trigger will deactivate others)
+      await supabase.from('tournaments').update({
+        is_active: true,
+        status: 'active'
+      }).eq('id', tournamentId);
+      await loadData();
+    } catch (error) {
+      console.error('Error setting tournament active:', error);
+      alert('Error setting tournament active: ' + error.message);
+    }
+  };
+
+  const updateTournamentDetails = async (tournament) => {
+    try {
+      await supabase.from('tournaments').update({
+        name: tournament.name,
+        year: tournament.year,
+        start_date: tournament.start_date,
+        end_date: tournament.end_date,
+        status: tournament.status
+      }).eq('id', tournament.id);
+      await loadData();
+    } catch (error) {
+      console.error('Error updating tournament:', error);
+      alert('Error updating tournament: ' + error.message);
+    }
+  };
+
   const addPlayerToTournament = async (playerId) => {
     if (!currentTournament) return;
     try {
@@ -489,6 +569,19 @@ useEffect(() => {
 
   const getTotalPar = () => courseHoles.reduce((sum, h) => sum + h.par, 0);
 
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'active': return 'bg-green-600 text-white';
+      case 'completed': return 'bg-gray-600 text-white';
+      case 'upcoming': return 'bg-blue-600 text-white';
+      default: return 'bg-gray-400 text-white';
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Upcoming';
+  };
+
   // Render functions
   const renderTournamentsTab = () => {
     return h('div', { className: 'space-y-6' },
@@ -518,6 +611,40 @@ useEffect(() => {
             onChange: (e) => setNewTournament({ ...newTournament, year: parseInt(e.target.value) }),
             className: 'border border-gray-300 p-3 rounded-lg'
           })
+        ),
+
+        // Tournament Dates and Status
+        h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4 mb-4' },
+          h('div', null,
+            h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Start Date'),
+            h('input', {
+              type: 'date',
+              value: newTournament.start_date,
+              onChange: (e) => setNewTournament({ ...newTournament, start_date: e.target.value }),
+              className: 'w-full border border-gray-300 p-3 rounded-lg'
+            })
+          ),
+          h('div', null,
+            h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'End Date'),
+            h('input', {
+              type: 'date',
+              value: newTournament.end_date,
+              onChange: (e) => setNewTournament({ ...newTournament, end_date: e.target.value }),
+              className: 'w-full border border-gray-300 p-3 rounded-lg'
+            })
+          ),
+          h('div', null,
+            h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Status'),
+            h('select', {
+              value: newTournament.status,
+              onChange: (e) => setNewTournament({ ...newTournament, status: e.target.value }),
+              className: 'w-full border border-gray-300 p-3 rounded-lg'
+            },
+              h('option', { value: 'upcoming' }, 'Upcoming'),
+              h('option', { value: 'active' }, 'Active'),
+              h('option', { value: 'completed' }, 'Completed')
+            )
+          )
         ),
         
         // Course Search Section
@@ -654,9 +781,34 @@ useEffect(() => {
           onClick: () => setCurrentTournament(t),
           className: `bg-white p-6 rounded-lg classic-shadow hover-lift cursor-pointer ${currentTournament?.id === t.id ? 'ring-4 ring-green-500' : ''}`
         },
-          h('h3', { className: 'text-xl font-bold text-green-800 mb-2' }, t.name),
+          h('div', { className: 'flex justify-between items-start mb-2' },
+            h('h3', { className: 'text-xl font-bold text-green-800' }, t.name),
+            h('span', { className: `px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(t.status || 'upcoming')}` },
+              getStatusLabel(t.status || 'upcoming')
+            )
+          ),
           h('p', { className: 'text-gray-600' }, `Year: ${t.year}`),
-          h('p', { className: 'text-gray-600' }, `Course: ${t.course_name || 'Not set'}`)
+          h('p', { className: 'text-gray-600' }, `Course: ${t.course_name || 'Not set'}`),
+          (t.start_date || t.end_date) && h('p', { className: 'text-gray-500 text-sm mt-2' },
+            t.start_date && t.end_date
+              ? `${new Date(t.start_date).toLocaleDateString()} - ${new Date(t.end_date).toLocaleDateString()}`
+              : t.start_date
+                ? `Starts: ${new Date(t.start_date).toLocaleDateString()}`
+                : `Ends: ${new Date(t.end_date).toLocaleDateString()}`
+          ),
+          t.is_active && h('div', { className: 'mt-3 pt-3 border-t border-green-200' },
+            h('p', { className: 'text-green-700 font-semibold text-sm flex items-center gap-1' },
+              h(Icons.Trophy, { size: 16 }),
+              'Active Tournament'
+            )
+          ),
+          !t.is_active && (t.status === 'upcoming' || t.status === 'active') && h('button', {
+            onClick: (e) => {
+              e.stopPropagation();
+              setTournamentActive(t.id);
+            },
+            className: 'mt-3 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-semibold'
+          }, 'Set as Active')
         ))
       )
     );
@@ -668,11 +820,101 @@ useEffect(() => {
     }
     return h('div', { className: 'space-y-6' },
       h('div', { className: 'flex justify-between items-center' },
-        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Course Details'),
-        h('button', {
-          onClick: () => setEditingCourse(!editingCourse),
-          className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
-        }, h(Icons.Edit, { size: 20 }), editingCourse ? 'Cancel' : 'Edit Course')
+        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Tournament & Course Details'),
+        h('div', { className: 'flex gap-2' },
+          h('button', {
+            onClick: () => setEditingTournament(!editingTournament),
+            className: 'bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2 font-semibold'
+          }, h(Icons.Edit, { size: 20 }), editingTournament ? 'Cancel' : 'Edit Tournament'),
+          h('button', {
+            onClick: () => setEditingCourse(!editingCourse),
+            className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
+          }, h(Icons.Edit, { size: 20 }), editingCourse ? 'Cancel' : 'Edit Course')
+        )
+      ),
+
+      // Tournament Details Section
+      h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800 flex items-center gap-2' },
+          h(Icons.Trophy, { size: 24 }),
+          'Tournament Details'
+        ),
+        editingTournament ? h('div', { className: 'space-y-4' },
+          h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+            h('input', {
+              type: 'text',
+              placeholder: 'Tournament Name',
+              value: currentTournament.name,
+              onChange: (e) => setCurrentTournament({ ...currentTournament, name: e.target.value }),
+              className: 'border border-gray-300 p-3 rounded-lg'
+            }),
+            h('input', {
+              type: 'number',
+              placeholder: 'Year',
+              value: currentTournament.year,
+              onChange: (e) => setCurrentTournament({ ...currentTournament, year: parseInt(e.target.value) }),
+              className: 'border border-gray-300 p-3 rounded-lg'
+            })
+          ),
+          h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4' },
+            h('div', null,
+              h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Start Date'),
+              h('input', {
+                type: 'date',
+                value: currentTournament.start_date || '',
+                onChange: (e) => setCurrentTournament({ ...currentTournament, start_date: e.target.value }),
+                className: 'w-full border border-gray-300 p-3 rounded-lg'
+              })
+            ),
+            h('div', null,
+              h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'End Date'),
+              h('input', {
+                type: 'date',
+                value: currentTournament.end_date || '',
+                onChange: (e) => setCurrentTournament({ ...currentTournament, end_date: e.target.value }),
+                className: 'w-full border border-gray-300 p-3 rounded-lg'
+              })
+            ),
+            h('div', null,
+              h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Status'),
+              h('select', {
+                value: currentTournament.status || 'upcoming',
+                onChange: (e) => setCurrentTournament({ ...currentTournament, status: e.target.value }),
+                className: 'w-full border border-gray-300 p-3 rounded-lg'
+              },
+                h('option', { value: 'upcoming' }, 'Upcoming'),
+                h('option', { value: 'active' }, 'Active'),
+                h('option', { value: 'completed' }, 'Completed')
+              )
+            )
+          ),
+          h('button', {
+            onClick: () => {
+              updateTournamentDetails(currentTournament);
+              setEditingTournament(false);
+            },
+            className: 'bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold'
+          }, 'Save Tournament Details')
+        ) : h('div', null,
+          h('div', { className: 'flex items-center justify-between mb-3' },
+            h('h4', { className: 'text-2xl font-bold' }, currentTournament.name),
+            h('span', { className: `px-3 py-1 rounded-full text-sm font-bold ${getStatusBadgeColor(currentTournament.status || 'upcoming')}` },
+              getStatusLabel(currentTournament.status || 'upcoming')
+            )
+          ),
+          h('p', { className: 'text-gray-600 mb-1' }, `Year: ${currentTournament.year}`),
+          (currentTournament.start_date || currentTournament.end_date) && h('p', { className: 'text-gray-600 mb-1' },
+            currentTournament.start_date && currentTournament.end_date
+              ? `${new Date(currentTournament.start_date).toLocaleDateString()} - ${new Date(currentTournament.end_date).toLocaleDateString()}`
+              : currentTournament.start_date
+                ? `Starts: ${new Date(currentTournament.start_date).toLocaleDateString()}`
+                : `Ends: ${new Date(currentTournament.end_date).toLocaleDateString()}`
+          ),
+          currentTournament.is_active && h('p', { className: 'text-green-700 font-semibold mt-2 flex items-center gap-1' },
+            h(Icons.Trophy, { size: 16 }),
+            'Active Tournament'
+          )
+        )
       ),
       h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
         editingCourse ? h('div', { className: 'space-y-4' },
