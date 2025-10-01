@@ -106,12 +106,13 @@ function LegsOpenTournament() {
   const [selectedTee, setSelectedTee] = useState(null);
   const [searchingCourses, setSearchingCourses] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
-  });
+  }, []); 
 
+  
   const loadData = async () => {
     try {
       const tournamentsRes = await supabase.from('tournaments').select('*');
