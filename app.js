@@ -110,7 +110,7 @@ function LegsOpenTournament() {
     loadData();
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
-  }, [currentTournament]);
+  });
 
   const loadData = async () => {
     try {
