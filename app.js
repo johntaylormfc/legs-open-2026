@@ -86,6 +86,7 @@ function LegsOpenTournament() {
   const [allScores, setAllScores] = useState([]); // Store all scores for historical data
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [viewingScorecard, setViewingScorecard] = useState(null); // For viewing player's scorecard from tournament history
   const [newPlayer, setNewPlayer] = useState({ name: '', handicap: '', cdh: '', bio: '', photo_url: '' });
   const [showCreateTournament, setShowCreateTournament] = useState(false);
   const [editingCourse, setEditingCourse] = useState(false);
@@ -591,6 +592,12 @@ useEffect(() => {
 
   const getStatusLabel = (status) => {
     return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Upcoming';
+  };
+
+  const getOrdinal = (n) => {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
   };
 
   // Render functions
@@ -1266,12 +1273,35 @@ useEffect(() => {
             }
           }
 
+          // Calculate all players' results for this tournament to determine position
+          const allTournamentPlayerScores = allPlayers.map(p => {
+            const pScores = allScores.filter(s =>
+              s.tournament_id === tournament.id && s.player_id === p.id
+            );
+            const pScoresMap = {};
+            pScores.forEach(score => {
+              pScoresMap[score.hole] = score.strokes;
+            });
+            const pGross = Object.values(pScoresMap).reduce((sum, s) => sum + s, 0);
+            const pHandicap = calculatePlayingHandicap(p.handicap);
+            const pNet = pGross - pHandicap;
+            return { playerId: p.id, netTotal: pNet, grossTotal: pGross };
+          }).filter(p => p.grossTotal > 0);
+
+          // Sort by net score to find position
+          const sortedResults = allTournamentPlayerScores.sort((a, b) => a.netTotal - b.netTotal);
+          const position = sortedResults.findIndex(p => p.playerId === selectedPlayer.id) + 1;
+          const totalPlayers = sortedResults.length;
+
           return {
             tournament,
             grossTotal,
             netTotal,
             stablefordTotal,
-            hasScores: grossTotal > 0
+            playerScores,
+            hasScores: grossTotal > 0,
+            position,
+            totalPlayers
           };
         }).filter(pt => pt.hasScores); // Only show tournaments where player has scores
 
@@ -1379,14 +1409,24 @@ useEffect(() => {
               playerTournaments.length === 0 ? 
                 h('p', { className: 'text-gray-500 text-center py-8' }, 'No tournament history yet') :
                 h('div', { className: 'space-y-3' },
-                  playerTournaments.map(({ tournament, grossTotal, netTotal, stablefordTotal, hasScores }) => 
+                  playerTournaments.map(({ tournament, grossTotal, netTotal, stablefordTotal, hasScores, position, totalPlayers, playerScores }) =>
                     h('div', {
                       key: tournament.id,
                       className: 'border border-gray-300 rounded-lg p-4 hover:bg-gray-50'
                     },
                       h('div', { className: 'flex justify-between items-start mb-2' },
-                        h('div', null,
-                          h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
+                        h('div', { className: 'flex-1' },
+                          h('div', { className: 'flex items-center gap-3 mb-1' },
+                            h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
+                            position && h('span', {
+                              className: `px-2 py-1 rounded-full text-xs font-bold ${
+                                position === 1 ? 'bg-yellow-400 text-yellow-900' :
+                                position === 2 ? 'bg-gray-300 text-gray-800' :
+                                position === 3 ? 'bg-orange-400 text-orange-900' :
+                                'bg-blue-100 text-blue-800'
+                              }`
+                            }, `${getOrdinal(position)} of ${totalPlayers}`)
+                          ),
                           h('p', { className: 'text-sm text-gray-600' }, `${tournament.year} - ${tournament.course_name}`)
                         ),
                         hasScores && h('div', { className: 'text-right' },
@@ -1394,7 +1434,8 @@ useEffect(() => {
                           h('p', { className: 'text-sm text-gray-600' }, `Gross: ${grossTotal}`)
                         )
                       ),
-                      hasScores ? h('div', { className: 'grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-200' },
+                      hasScores ? h('div', null,
+                        h('div', { className: 'grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-200' },
                         h('div', { className: 'text-center' },
                           h('p', { className: 'text-xs text-gray-500' }, 'Gross Score'),
                           h('p', { className: 'text-lg font-bold text-gray-700' }, grossTotal)
@@ -1406,6 +1447,14 @@ useEffect(() => {
                         h('div', { className: 'text-center' },
                           h('p', { className: 'text-xs text-gray-500' }, 'Stableford'),
                           h('p', { className: 'text-lg font-bold text-blue-700' }, stablefordTotal)
+                        )
+                        ),
+                        h('button', {
+                          onClick: () => setViewingScorecard({ tournament, playerScores, player: selectedPlayer }),
+                          className: 'mt-3 w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold flex items-center justify-center gap-2'
+                        },
+                          h(Icons.Edit, { size: 16 }),
+                          'View Scorecard'
                         )
                       ) : h('p', { className: 'text-sm text-gray-400 italic' }, 'No scores recorded')
                     )
@@ -1429,7 +1478,121 @@ useEffect(() => {
             )
           )
         );
-      })()
+      })(),
+
+      // Scorecard Modal
+      viewingScorecard && h('div', {
+        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50',
+        onClick: () => setViewingScorecard(null)
+      },
+        h('div', {
+          className: 'bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto',
+          onClick: (e) => e.stopPropagation()
+        },
+          h('div', { className: 'flex justify-between items-start mb-6' },
+            h('div', null,
+              h('h3', { className: 'text-3xl font-bold text-green-800' }, `${viewingScorecard.player.name}'s Scorecard`),
+              h('p', { className: 'text-gray-600 mt-1' }, `${viewingScorecard.tournament.name} - ${viewingScorecard.tournament.year}`)
+            ),
+            h('button', {
+              onClick: () => setViewingScorecard(null),
+              className: 'text-gray-500 hover:text-gray-700 text-3xl leading-none'
+            }, '×')
+          ),
+
+          // Scorecard Table
+          h('div', { className: 'overflow-x-auto' },
+            h('table', { className: 'w-full border-collapse' },
+              h('thead', null,
+                h('tr', { className: 'bg-green-700 text-white' },
+                  h('th', { className: 'p-3 text-left border border-green-600' }, 'Hole'),
+                  h('th', { className: 'p-3 text-center border border-green-600' }, 'Par'),
+                  h('th', { className: 'p-3 text-center border border-green-600' }, 'SI'),
+                  h('th', { className: 'p-3 text-center border border-green-600' }, 'Score'),
+                  h('th', { className: 'p-3 text-center border border-green-600' }, 'Points')
+                )
+              ),
+              h('tbody', null,
+                Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
+                  const tournamentHoles = viewingScorecard.tournament.holes || APP_CONFIG.defaultHoleData;
+                  const holeData = tournamentHoles.find(h => h.hole === hole);
+                  const score = viewingScorecard.playerScores[hole];
+                  const playingHandicap = calculatePlayingHandicap(viewingScorecard.player.handicap);
+
+                  let points = 0;
+                  if (score && holeData) {
+                    const strokesReceived = playingHandicap >= holeData.strokeIndex ?
+                      Math.floor(playingHandicap / 18) + 1 :
+                      Math.floor(playingHandicap / 18);
+                    const netScore = score - strokesReceived;
+                    points = Math.max(0, 2 + (holeData.par - netScore));
+                  }
+
+                  const par = holeData?.par || 4;
+                  const diff = score ? score - par : 0;
+                  const bgColor = !score ? '' :
+                    diff <= -2 ? 'bg-yellow-100' :
+                    diff === -1 ? 'bg-blue-100' :
+                    diff === 0 ? 'bg-green-100' :
+                    diff === 1 ? 'bg-orange-100' :
+                    'bg-red-100';
+
+                  return h('tr', {
+                    key: hole,
+                    className: `${bgColor} ${hole === 9 ? 'border-b-4 border-green-700' : 'border-b border-gray-200'}`
+                  },
+                    h('td', { className: 'p-3 font-bold border border-gray-300' }, hole),
+                    h('td', { className: 'p-3 text-center border border-gray-300' }, holeData?.par || 4),
+                    h('td', { className: 'p-3 text-center border border-gray-300' }, holeData?.strokeIndex || hole),
+                    h('td', { className: 'p-3 text-center font-bold border border-gray-300' }, score || '-'),
+                    h('td', { className: 'p-3 text-center font-bold border border-gray-300' }, score ? points : '-')
+                  );
+                }),
+                // Totals row
+                h('tr', { className: 'bg-green-700 text-white font-bold' },
+                  h('td', { className: 'p-3 border border-green-600' }, 'Total'),
+                  h('td', { className: 'p-3 text-center border border-green-600' },
+                    (viewingScorecard.tournament.holes || APP_CONFIG.defaultHoleData).reduce((sum, h) => sum + h.par, 0)
+                  ),
+                  h('td', { className: 'p-3 border border-green-600' }, ''),
+                  h('td', { className: 'p-3 text-center border border-green-600' },
+                    Object.values(viewingScorecard.playerScores).reduce((sum, s) => sum + s, 0) || '-'
+                  ),
+                  h('td', { className: 'p-3 text-center border border-green-600' },
+                    (() => {
+                      let total = 0;
+                      const tournamentHoles = viewingScorecard.tournament.holes || APP_CONFIG.defaultHoleData;
+                      const playingHandicap = calculatePlayingHandicap(viewingScorecard.player.handicap);
+                      for (let hole = 1; hole <= 18; hole++) {
+                        const score = viewingScorecard.playerScores[hole];
+                        if (score) {
+                          const holeData = tournamentHoles.find(h => h.hole === hole);
+                          if (holeData) {
+                            const strokesReceived = playingHandicap >= holeData.strokeIndex ?
+                              Math.floor(playingHandicap / 18) + 1 :
+                              Math.floor(playingHandicap / 18);
+                            const netScore = score - strokesReceived;
+                            total += Math.max(0, 2 + (holeData.par - netScore));
+                          }
+                        }
+                      }
+                      return total;
+                    })()
+                  )
+                )
+              )
+            )
+          ),
+
+          // Close button
+          h('div', { className: 'mt-6 flex justify-end' },
+            h('button', {
+              onClick: () => setViewingScorecard(null),
+              className: 'bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 font-semibold'
+            }, 'Close')
+          )
+        )
+      )
     );
   };
 
