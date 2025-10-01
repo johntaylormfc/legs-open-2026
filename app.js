@@ -1723,7 +1723,6 @@ useEffect(() => {
           }, 'Enter')
         ),
         h('div', { className: 'mt-6 text-center text-sm text-gray-500' },
-          h('p', null, 'Admin PIN: 1991'),
           h('p', null, 'Group PINs are provided by tournament organizers')
         )
       )
