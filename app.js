@@ -156,24 +156,27 @@ function LegsOpenTournament() {
   
   const selectSmartTournament = (tournaments) => {
     // Priority order for selecting the "current" tournament:
-    // 1. Previously selected tournament from localStorage (if still exists)
-    // 2. Active tournament (is_active = true)
+    // 1. Active tournament (is_active = true) - ALWAYS takes priority
+    // 2. Previously selected tournament from localStorage (if still exists and not active tournament)
     // 3. Most recent tournament with scores
     // 4. Newest tournament by year
 
-    const savedTournamentId = localStorage.getItem('selectedTournamentId');
+    // FIRST: Check for active tournament - this ALWAYS takes priority
+    const activeTournament = tournaments.find(t => t.is_active === true);
+    if (activeTournament) {
+      // Update localStorage to match the active tournament
+      localStorage.setItem('selectedTournamentId', activeTournament.id);
+      return activeTournament;
+    }
 
-    // Try to restore previously selected tournament
+    // SECOND: Try to restore previously selected tournament
+    const savedTournamentId = localStorage.getItem('selectedTournamentId');
     if (savedTournamentId) {
       const savedTournament = tournaments.find(t => t.id === savedTournamentId);
       if (savedTournament) return savedTournament;
     }
 
-    // Find active tournament
-    const activeTournament = tournaments.find(t => t.is_active === true);
-    if (activeTournament) return activeTournament;
-
-    // Find most recent tournament with scores (we'll check this later when scores load)
+    // THIRD: Find most recent tournament with scores (we'll check this later when scores load)
     // For now, just return the newest by year
     const sorted = [...tournaments].sort((a, b) => {
       // Sort by year descending, then by start_date descending
@@ -199,19 +202,27 @@ function LegsOpenTournament() {
         const sorted = tournamentsRes.data.sort((a, b) => b.year - a.year);
         setTournaments(sorted);
 
-        // Always check localStorage first as the source of truth
-        const savedId = localStorage.getItem('selectedTournamentId');
         let selectedTournament = null;
 
-        if (savedId) {
-          // If we have a savedId in localStorage, use it
-          selectedTournament = sorted.find(t => t.id === savedId);
-        }
+        // ALWAYS check for active tournament FIRST
+        const activeTournament = sorted.find(t => t.is_active === true);
 
-        if (!selectedTournament) {
-          // No savedId or tournament not found - select smart tournament
-          selectedTournament = selectSmartTournament(sorted);
-          localStorage.setItem('selectedTournamentId', selectedTournament.id);
+        if (activeTournament) {
+          // If there's an active tournament, ALWAYS use it (ignore localStorage)
+          selectedTournament = activeTournament;
+          localStorage.setItem('selectedTournamentId', activeTournament.id);
+        } else {
+          // No active tournament - use localStorage or fallback
+          const savedId = localStorage.getItem('selectedTournamentId');
+          if (savedId) {
+            selectedTournament = sorted.find(t => t.id === savedId);
+          }
+          if (!selectedTournament) {
+            selectedTournament = sorted[0]; // Fallback to first tournament
+            if (selectedTournament) {
+              localStorage.setItem('selectedTournamentId', selectedTournament.id);
+            }
+          }
         }
 
         // Always set the tournament state and ID
