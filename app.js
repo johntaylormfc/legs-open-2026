@@ -2,7 +2,7 @@
 const APP_CONFIG = {
   supabaseUrl: 'https://pygqvtumydxsnybvakkw.supabase.co',
   supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Z3F2dHVteWR4c255YnZha2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTU0MDgsImV4cCI6MjA3NDgzMTQwOH0.gZEXn485fkwjdnedthefsEyhnHiEMO_ZvreS9meiZbg',
-  golfDataApiUrl: 'https://golf-data-api.brewererp.uk',
+  golfDataApiUrl: 'https://api.bthree.uk/golf/v1',
   defaultHoleData: Array.from({ length: 18 }, (_, i) => ({
     hole: i + 1,
     par: i < 4 || i > 13 ? 4 : (i === 4 || i === 14 ? 3 : 5),
