@@ -202,6 +202,15 @@ useEffect(() => {
           // Use localStorage to determine which tournament to load data for
           const savedId = localStorage.getItem('selectedTournamentId');
           activeTournamentId = savedId || currentTournament?.id;
+
+          // Update currentTournament state if it doesn't match localStorage
+          if (savedId && currentTournament?.id !== savedId) {
+            const savedTournament = sorted.find(t => t.id === savedId);
+            if (savedTournament) {
+              setCurrentTournament(savedTournament);
+              if (savedTournament.holes) setCourseHoles(savedTournament.holes);
+            }
+          }
         }
       }
 
