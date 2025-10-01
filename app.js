@@ -1416,26 +1416,18 @@ useEffect(() => {
                     },
                       h('div', { className: 'flex justify-between items-start mb-2' },
                         h('div', { className: 'flex-1' },
-                          h('div', { className: 'flex items-center gap-3 mb-1' },
-                            h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
-                            position && h('span', {
-                              className: `px-2 py-1 rounded-full text-xs font-bold ${
-                                position === 1 ? 'bg-yellow-400 text-yellow-900' :
-                                position === 2 ? 'bg-gray-300 text-gray-800' :
-                                position === 3 ? 'bg-orange-400 text-orange-900' :
-                                'bg-blue-100 text-blue-800'
-                              }`
-                            }, `${getOrdinal(position)} of ${totalPlayers}`)
-                          ),
-                          h('p', { className: 'text-sm text-gray-600' }, `${tournament.year} - ${tournament.course_name}`)
+                          h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
+                          h('p', { className: 'text-sm text-gray-600' }, `${tournament.year} - ${tournament.course_name}`),
+                          position > 0 && h('p', { className: 'text-sm font-semibold text-blue-700 mt-1' },
+                            `Finished ${getOrdinal(position)} of ${totalPlayers} players`
+                          )
                         ),
                         hasScores && h('div', { className: 'text-right' },
                           h('p', { className: 'text-sm text-gray-600' }, `Net: ${netTotal}`),
                           h('p', { className: 'text-sm text-gray-600' }, `Gross: ${grossTotal}`)
                         )
                       ),
-                      hasScores ? h('div', null,
-                        h('div', { className: 'grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-200' },
+                      hasScores && h('div', { className: 'grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-200' },
                         h('div', { className: 'text-center' },
                           h('p', { className: 'text-xs text-gray-500' }, 'Gross Score'),
                           h('p', { className: 'text-lg font-bold text-gray-700' }, grossTotal)
@@ -1448,15 +1440,15 @@ useEffect(() => {
                           h('p', { className: 'text-xs text-gray-500' }, 'Stableford'),
                           h('p', { className: 'text-lg font-bold text-blue-700' }, stablefordTotal)
                         )
-                        ),
-                        h('button', {
-                          onClick: () => setViewingScorecard({ tournament, playerScores, player: selectedPlayer }),
-                          className: 'mt-3 w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold flex items-center justify-center gap-2'
-                        },
-                          h(Icons.Edit, { size: 16 }),
-                          'View Scorecard'
-                        )
-                      ) : h('p', { className: 'text-sm text-gray-400 italic' }, 'No scores recorded')
+                      ),
+                      hasScores && h('button', {
+                        onClick: () => setViewingScorecard({ tournament, playerScores, player: selectedPlayer }),
+                        className: 'mt-3 w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold flex items-center justify-center gap-2'
+                      },
+                        h(Icons.Edit, { size: 16 }),
+                        'View Scorecard'
+                      ),
+                      !hasScores && h('p', { className: 'text-sm text-gray-400 italic mt-3' }, 'No scores recorded')
                     )
                   )
                 )
