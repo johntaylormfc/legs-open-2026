@@ -986,7 +986,17 @@ function LegsOpenTournament() {
     );
   };
 
-  const renderPlayersTab = () => {
+const renderPlayersTab = () => {
+    const handleImageUpload = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { alert('Image size must be less than 5MB'); return; }
+      if (!file.type.startsWith('image/')) { alert('Please upload an image file'); return; }
+      const reader = new FileReader();
+      reader.onload = (event) => setSelectedPlayer({ ...selectedPlayer, photo_url: event.target.result });
+      reader.readAsDataURL(file);
+    };
+
     return h('div', { className: 'space-y-6' },
       h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Player Profiles'),
       allPlayers.length === 0 ? h('div', { className: 'text-center text-gray-500 text-xl py-12' }, 'No players yet. Go to Setup to add players.') :
@@ -1010,136 +1020,71 @@ function LegsOpenTournament() {
         ))
       ),
       
-      selectedPlayer && (() => {
-        const [playerHistory, setPlayerHistory] = useState([]);
-        const [loadingHistory, setLoadingHistory] = useState(true);
-        
-        useEffect(() => {
-          const loadHistory = async () => {
-            setLoadingHistory(true);
-            try {
-              const { data: allScores } = await supabase.from('scores').select('*');
-              const { data: tpData } = await supabase.from('tournament_players').select('*');
-              
-              const history = tournaments.filter(t => 
-                tpData?.some(tp => tp.player_id === selectedPlayer.id && tp.tournament_id === t.id)
-              ).map(tournament => {
-                const tournamentScores = {};
-                allScores?.filter(s => 
-                  s.tournament_id === tournament.id && s.player_id === selectedPlayer.id
-                ).forEach(score => {
-                  tournamentScores[score.hole] = score.strokes;
-                });
-                
-                const grossTotal = Object.values(tournamentScores).reduce((sum, s) => sum + s, 0);
-                const playingHandicap = calculatePlayingHandicap(selectedPlayer.handicap);
-                const netTotal = grossTotal - playingHandicap;
-                
-                let stablefordTotal = 0;
-                const tournamentHoles = tournament.holes || APP_CONFIG.defaultHoleData;
-                for (let hole = 1; hole <= 18; hole++) {
-                  if (tournamentScores[hole]) {
-                    const holeData = tournamentHoles.find(h => h.hole === hole);
-                    if (holeData) {
-                      const strokesReceived = playingHandicap >= holeData.strokeIndex ? 
-                        Math.floor(playingHandicap / 18) + 1 : Math.floor(playingHandicap / 18);
-                      const netScore = tournamentScores[hole] - strokesReceived;
-                      stablefordTotal += Math.max(0, 2 + (holeData.par - netScore));
-                    }
-                  }
-                }
-                
-                return { tournament, grossTotal, netTotal, stablefordTotal, hasScores: grossTotal > 0 };
-              });
-              
-              setPlayerHistory(history);
-            } catch (error) {
-              console.error('Error loading player history:', error);
-            } finally {
-              setLoadingHistory(false);
-            }
-          };
+      selectedPlayer && h('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50', onClick: () => setSelectedPlayer(null) },
+        h('div', { className: 'bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto', onClick: (e) => e.stopPropagation() },
+          h('div', { className: 'flex justify-between items-start mb-6' },
+            h('h3', { className: 'text-3xl font-bold text-green-800' }, selectedPlayer.name),
+            h('button', { onClick: () => setSelectedPlayer(null), className: 'text-gray-500 hover:text-gray-700 text-3xl leading-none' }, '×')
+          ),
           
-          loadHistory();
-        }, [selectedPlayer]);
-
-        const handleImageUpload = (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-          if (file.size > 5 * 1024 * 1024) { alert('Image size must be less than 5MB'); return; }
-          if (!file.type.startsWith('image/')) { alert('Please upload an image file'); return; }
-          const reader = new FileReader();
-          reader.onload = (event) => setSelectedPlayer({ ...selectedPlayer, photo_url: event.target.result });
-          reader.readAsDataURL(file);
-        };
-
-        return h('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50', onClick: () => setSelectedPlayer(null) },
-          h('div', { className: 'bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto', onClick: (e) => e.stopPropagation() },
-            h('div', { className: 'flex justify-between items-start mb-6' },
-              h('h3', { className: 'text-3xl font-bold text-green-800' }, selectedPlayer.name),
-              h('button', { onClick: () => setSelectedPlayer(null), className: 'text-gray-500 hover:text-gray-700 text-3xl leading-none' }, '×')
-            ),
-            
-            h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6 mb-6' },
-              h('div', { className: 'space-y-4' },
-                selectedPlayer.photo_url ? h('img', { src: selectedPlayer.photo_url, alt: selectedPlayer.name, className: 'w-full aspect-square rounded-lg object-cover' }) : 
-                h('div', { className: 'w-full aspect-square rounded-lg bg-gray-200 flex items-center justify-center' }, h('span', { className: 'text-6xl text-gray-400' }, selectedPlayer.name.charAt(0))),
-                h('div', { className: 'space-y-2' },
-                  h('label', { className: 'block w-full bg-blue-600 text-white text-center px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer font-semibold' },
-                    'Upload Photo',
-                    h('input', { type: 'file', accept: 'image/*', onChange: handleImageUpload, className: 'hidden' })
-                  ),
-                  h('input', { type: 'text', placeholder: 'Or paste image URL', value: selectedPlayer.photo_url || '', onChange: (e) => setSelectedPlayer({ ...selectedPlayer, photo_url: e.target.value }), className: 'w-full border border-gray-300 p-2 rounded-lg text-sm' })
-                )
-              ),
-              h('div', { className: 'md:col-span-2 space-y-4' },
-                h('div', { className: 'grid grid-cols-2 gap-4' },
-                  h('div', null, h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Handicap'), h('p', { className: 'text-2xl font-bold text-green-800' }, selectedPlayer.handicap)),
-                  h('div', null, h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'CDH Number'), h('p', { className: 'text-lg' }, selectedPlayer.cdh_number || 'Not set'))
+          h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6 mb-6' },
+            h('div', { className: 'space-y-4' },
+              selectedPlayer.photo_url ? h('img', { src: selectedPlayer.photo_url, alt: selectedPlayer.name, className: 'w-full aspect-square rounded-lg object-cover' }) : 
+              h('div', { className: 'w-full aspect-square rounded-lg bg-gray-200 flex items-center justify-center' }, h('span', { className: 'text-6xl text-gray-400' }, selectedPlayer.name.charAt(0))),
+              h('div', { className: 'space-y-2' },
+                h('label', { className: 'block w-full bg-blue-600 text-white text-center px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer font-semibold' },
+                  'Upload Photo',
+                  h('input', { type: 'file', accept: 'image/*', onChange: handleImageUpload, className: 'hidden' })
                 ),
-                h('div', null, h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Bio'),
-                  h('textarea', { placeholder: 'Add a bio...', value: selectedPlayer.bio || '', onChange: (e) => setSelectedPlayer({ ...selectedPlayer, bio: e.target.value }), className: 'w-full border border-gray-300 p-3 rounded-lg h-32' })
-                )
+                h('input', { type: 'text', placeholder: 'Or paste image URL', value: selectedPlayer.photo_url || '', onChange: (e) => setSelectedPlayer({ ...selectedPlayer, photo_url: e.target.value }), className: 'w-full border border-gray-300 p-2 rounded-lg text-sm' })
               )
             ),
-            
-            h('div', { className: 'mb-6' },
-              h('h4', { className: 'text-2xl font-bold text-green-800 mb-4 flex items-center gap-2' }, h(Icons.Trophy, { size: 24 }), 'Tournament History'),
-              loadingHistory ? h('p', { className: 'text-gray-500 text-center py-8' }, 'Loading history...') :
-              playerHistory.length === 0 ? h('p', { className: 'text-gray-500 text-center py-8' }, 'No tournament history yet') :
-              h('div', { className: 'space-y-3' },
-                playerHistory.map(({ tournament, grossTotal, netTotal, stablefordTotal, hasScores }) => 
-                  h('div', { key: tournament.id, className: 'border border-gray-300 rounded-lg p-4 hover:bg-gray-50' },
-                    h('div', { className: 'flex justify-between items-start mb-2' },
-                      h('div', null,
-                        h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
-                        h('p', { className: 'text-sm text-gray-600' }, `${tournament.year} - ${tournament.course_name}`)
-                      ),
-                      hasScores && h('div', { className: 'text-right' },
-                        h('p', { className: 'text-sm text-gray-600' }, `Net: ${netTotal}`),
-                        h('p', { className: 'text-sm text-gray-600' }, `Gross: ${grossTotal}`)
-                      )
-                    ),
-                    hasScores ? h('div', { className: 'grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-200' },
-                      h('div', { className: 'text-center' }, h('p', { className: 'text-xs text-gray-500' }, 'Gross Score'), h('p', { className: 'text-lg font-bold text-gray-700' }, grossTotal)),
-                      h('div', { className: 'text-center' }, h('p', { className: 'text-xs text-gray-500' }, 'Net Score'), h('p', { className: 'text-lg font-bold text-green-700' }, netTotal)),
-                      h('div', { className: 'text-center' }, h('p', { className: 'text-xs text-gray-500' }, 'Stableford'), h('p', { className: 'text-lg font-bold text-blue-700' }, stablefordTotal))
-                    ) : h('p', { className: 'text-sm text-gray-400 italic' }, 'No scores recorded')
-                  )
-                )
+            h('div', { className: 'md:col-span-2 space-y-4' },
+              h('div', { className: 'grid grid-cols-2 gap-4' },
+                h('div', null, h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Handicap'), h('p', { className: 'text-2xl font-bold text-green-800' }, selectedPlayer.handicap)),
+                h('div', null, h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'CDH Number'), h('p', { className: 'text-lg' }, selectedPlayer.cdh_number || 'Not set'))
+              ),
+              h('div', null, h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Bio'),
+                h('textarea', { placeholder: 'Add a bio...', value: selectedPlayer.bio || '', onChange: (e) => setSelectedPlayer({ ...selectedPlayer, bio: e.target.value }), className: 'w-full border border-gray-300 p-3 rounded-lg h-32' })
               )
-            ),
-            
-            h('div', { className: 'flex gap-4' },
-              h('button', { onClick: () => { updatePlayerBio(selectedPlayer); setSelectedPlayer(null); }, className: 'flex-1 bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 font-semibold' }, 'Save Changes'),
-              h('button', { onClick: () => setSelectedPlayer(null), className: 'bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 font-semibold' }, 'Cancel')
             )
+          ),
+          
+          h('div', { className: 'mb-6' },
+            h('h4', { className: 'text-2xl font-bold text-green-800 mb-4 flex items-center gap-2' }, h(Icons.Trophy, { size: 24 }), 'Tournament History'),
+            loadingHistory ? h('p', { className: 'text-gray-500 text-center py-8' }, 'Loading history...') :
+            playerHistory.length === 0 ? h('p', { className: 'text-gray-500 text-center py-8' }, 'No tournament history yet') :
+            h('div', { className: 'space-y-3' },
+              playerHistory.map(({ tournament, grossTotal, netTotal, stablefordTotal, hasScores }) => 
+                h('div', { key: tournament.id, className: 'border border-gray-300 rounded-lg p-4 hover:bg-gray-50' },
+                  h('div', { className: 'flex justify-between items-start mb-2' },
+                    h('div', null,
+                      h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
+                      h('p', { className: 'text-sm text-gray-600' }, `${tournament.year} - ${tournament.course_name}`)
+                    ),
+                    hasScores && h('div', { className: 'text-right' },
+                      h('p', { className: 'text-sm text-gray-600' }, `Net: ${netTotal}`),
+                      h('p', { className: 'text-sm text-gray-600' }, `Gross: ${grossTotal}`)
+                    )
+                  ),
+                  hasScores ? h('div', { className: 'grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-200' },
+                    h('div', { className: 'text-center' }, h('p', { className: 'text-xs text-gray-500' }, 'Gross Score'), h('p', { className: 'text-lg font-bold text-gray-700' }, grossTotal)),
+                    h('div', { className: 'text-center' }, h('p', { className: 'text-xs text-gray-500' }, 'Net Score'), h('p', { className: 'text-lg font-bold text-green-700' }, netTotal)),
+                    h('div', { className: 'text-center' }, h('p', { className: 'text-xs text-gray-500' }, 'Stableford'), h('p', { className: 'text-lg font-bold text-blue-700' }, stablefordTotal))
+                  ) : h('p', { className: 'text-sm text-gray-400 italic' }, 'No scores recorded')
+                )
+              )
+            )
+          ),
+          
+          h('div', { className: 'flex gap-4' },
+            h('button', { onClick: () => { updatePlayerBio(selectedPlayer); setSelectedPlayer(null); }, className: 'flex-1 bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 font-semibold' }, 'Save Changes'),
+            h('button', { onClick: () => setSelectedPlayer(null), className: 'bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 font-semibold' }, 'Cancel')
           )
-        );
-      })()
+        )
+      )
     );
-  };
-  
+  };  
 
   if (loading) {
     return h('div', { className: 'min-h-screen hero-pattern flex items-center justify-center' },
