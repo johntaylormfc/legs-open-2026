@@ -279,7 +279,11 @@ function LegsOpenTournament() {
           filtered.forEach(score => {
             if (!scoresMap[score.player_id]) scoresMap[score.player_id] = {};
             // Convert -1 (database value for NR) back to 'NR' string
-            scoresMap[score.player_id][score.hole] = score.strokes === -1 ? 'NR' : score.strokes;
+            const displayValue = score.strokes === -1 ? 'NR' : score.strokes;
+            scoresMap[score.player_id][score.hole] = displayValue;
+            if (displayValue === 'NR') {
+              console.log(`LoadData: Player ${score.player_id}, Hole ${score.hole} loaded as NR (DB value: ${score.strokes})`);
+            }
           });
           setScores(scoresMap);
         }
@@ -867,16 +871,34 @@ function LegsOpenTournament() {
       // Handle NR (No Return) - store as -1 in database
       const strokeValue = strokes === 'NR' ? -1 : parseInt(strokes);
 
-      await supabase.from('scores').upsert({
+      console.log(`Updating score - Player: ${playerId}, Hole: ${hole}, Strokes: ${strokes}, DB Value: ${strokeValue}`);
+
+      const { data, error } = await supabase.from('scores').upsert({
         tournament_id: currentTournament.id,
         player_id: playerId,
         hole: hole,
         strokes: strokeValue
       }, { onConflict: 'tournament_id,player_id,hole' });
 
-      setScores({
-        ...scores,
-        [playerId]: { ...scores[playerId], [hole]: strokes === 'NR' ? 'NR' : strokeValue }
+      if (error) {
+        console.error('Error updating score to database:', error);
+        return;
+      }
+
+      console.log('Database update successful, updating local state');
+
+      // Immediately update local state
+      const displayValue = strokes === 'NR' ? 'NR' : strokeValue;
+      setScores(prevScores => {
+        const updated = {
+          ...prevScores,
+          [playerId]: {
+            ...(prevScores[playerId] || {}),
+            [hole]: displayValue
+          }
+        };
+        console.log(`Local state updated - Hole ${hole} = ${displayValue}`, updated[playerId]);
+        return updated;
       });
     } catch (error) {
       console.error('Error updating score:', error);
