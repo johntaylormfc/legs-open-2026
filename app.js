@@ -278,7 +278,8 @@ function LegsOpenTournament() {
           const scoresMap = {};
           filtered.forEach(score => {
             if (!scoresMap[score.player_id]) scoresMap[score.player_id] = {};
-            scoresMap[score.player_id][score.hole] = score.strokes;
+            // Convert -1 (database value for NR) back to 'NR' string
+            scoresMap[score.player_id][score.hole] = score.strokes === -1 ? 'NR' : score.strokes;
           });
           setScores(scoresMap);
         }
@@ -843,17 +844,39 @@ function LegsOpenTournament() {
   };
 
   const updateScore = async (playerId, hole, strokes) => {
-    if (!currentTournament || !strokes) return;
+    if (!currentTournament) return;
+
+    // Handle empty string (clearing score)
+    if (!strokes || strokes === '') {
+      try {
+        await supabase.from('scores')
+          .delete()
+          .eq('tournament_id', currentTournament.id)
+          .eq('player_id', playerId)
+          .eq('hole', hole);
+        const updatedPlayerScores = { ...scores[playerId] };
+        delete updatedPlayerScores[hole];
+        setScores({ ...scores, [playerId]: updatedPlayerScores });
+      } catch (error) {
+        console.error('Error deleting score:', error);
+      }
+      return;
+    }
+
     try {
+      // Handle NR (No Return) - store as -1 in database
+      const strokeValue = strokes === 'NR' ? -1 : parseInt(strokes);
+
       await supabase.from('scores').upsert({
         tournament_id: currentTournament.id,
         player_id: playerId,
         hole: hole,
-        strokes: parseInt(strokes)
+        strokes: strokeValue
       }, { onConflict: 'tournament_id,player_id,hole' });
-      setScores({ 
-        ...scores, 
-        [playerId]: { ...scores[playerId], [hole]: parseInt(strokes) } 
+
+      setScores({
+        ...scores,
+        [playerId]: { ...scores[playerId], [hole]: strokes === 'NR' ? 'NR' : strokeValue }
       });
     } catch (error) {
       console.error('Error updating score:', error);
@@ -879,48 +902,67 @@ function LegsOpenTournament() {
     if (!currentTournament) return { results: [], medalWinner: null, stablefordWinner: null, grossWinner: null };
     const results = tournamentPlayers.map(player => {
       const playerScores = scores[player.id] || {};
-      const grossTotal = Object.values(playerScores).reduce((sum, s) => sum + s, 0);
-      const playingHandicap = calculatePlayingHandicap(player.handicap);
-      const netTotal = grossTotal - playingHandicap;
 
-      // Calculate stableford and also track back 9 scores for tie-breaking
-      let stablefordTotal = 0;
+      // Check if any score is NR
+      const hasNR = Object.values(playerScores).some(s => s === 'NR');
+
+      // Calculate gross total (skip NR holes)
+      let grossTotal = 0;
       let back9Gross = 0;
-      let back9Net = 0;
+
+      for (let hole = 1; hole <= 18; hole++) {
+        const score = playerScores[hole];
+        if (score && score !== 'NR') {
+          grossTotal += score;
+          if (hole >= 10) {
+            back9Gross += score;
+          }
+        }
+      }
+
+      const playingHandicap = calculatePlayingHandicap(player.handicap);
+
+      // If player has any NR, set gross and net to 'NR'
+      const grossTotalDisplay = hasNR ? 'NR' : grossTotal;
+      const netTotal = hasNR ? 'NR' : (grossTotal - playingHandicap);
+      const back9Net = hasNR ? 'NR' : (back9Gross - Math.floor(playingHandicap / 2));
+
+      // Calculate stableford (still works with NR holes - just skip them)
+      let stablefordTotal = 0;
       let back9Stableford = 0;
 
       for (let hole = 1; hole <= 18; hole++) {
-        if (playerScores[hole]) {
-          const stablefordPoints = calculateStableford(playerScores[hole], hole, playingHandicap);
+        const score = playerScores[hole];
+        if (score && score !== 'NR') {
+          const stablefordPoints = calculateStableford(score, hole, playingHandicap);
           stablefordTotal += stablefordPoints;
 
-          // Track back 9 (holes 10-18)
           if (hole >= 10) {
-            back9Gross += playerScores[hole];
             back9Stableford += stablefordPoints;
           }
         }
       }
 
-      // Calculate back 9 net
-      const back9PlayingHandicap = Math.floor(playingHandicap / 2);
-      back9Net = back9Gross - back9PlayingHandicap;
-
       return {
         ...player,
-        grossTotal,
+        grossTotal: grossTotalDisplay,
         netTotal,
         stablefordTotal,
         playingHandicap,
-        back9Gross,
+        back9Gross: hasNR ? 'NR' : back9Gross,
         back9Net,
-        back9Stableford
+        back9Stableford,
+        hasNR
       };
-    }).filter(p => p.grossTotal > 0);
+    }).filter(p => p.stablefordTotal > 0 || p.grossTotal !== 'NR');
 
     // Sort based on selected criteria with tie-breaking
     if (sortBy === 'gross') {
       results.sort((a, b) => {
+        // NR always goes to bottom
+        if (a.grossTotal === 'NR' && b.grossTotal !== 'NR') return 1;
+        if (b.grossTotal === 'NR' && a.grossTotal !== 'NR') return -1;
+        if (a.grossTotal === 'NR' && b.grossTotal === 'NR') return 0;
         // First compare gross totals
         if (a.grossTotal !== b.grossTotal) return a.grossTotal - b.grossTotal;
         // Tie-breaker: back 9 gross (lower is better)
@@ -935,6 +977,10 @@ function LegsOpenTournament() {
       });
     } else {
       results.sort((a, b) => {
+        // NR always goes to bottom
+        if (a.netTotal === 'NR' && b.netTotal !== 'NR') return 1;
+        if (b.netTotal === 'NR' && a.netTotal !== 'NR') return -1;
+        if (a.netTotal === 'NR' && b.netTotal === 'NR') return 0;
         // First compare net totals
         if (a.netTotal !== b.netTotal) return a.netTotal - b.netTotal;
         // Tie-breaker: back 9 net (lower is better)
@@ -943,7 +989,8 @@ function LegsOpenTournament() {
     }
 
     // Determine winners (always based on net and stableford with tie-breaking)
-    const sortedByNet = [...results].sort((a, b) => {
+    // Filter out NR players from medal winner consideration
+    const sortedByNet = [...results].filter(p => p.netTotal !== 'NR').sort((a, b) => {
       if (a.netTotal !== b.netTotal) return a.netTotal - b.netTotal;
       return a.back9Net - b.back9Net;
     });
@@ -955,7 +1002,7 @@ function LegsOpenTournament() {
     });
     const stablefordWinner = sortedByStableford.find(p => p.id !== medalWinner?.id);
 
-    const sortedByGross = [...results].sort((a, b) => {
+    const sortedByGross = [...results].filter(p => p.grossTotal !== 'NR').sort((a, b) => {
       if (a.grossTotal !== b.grossTotal) return a.grossTotal - b.grossTotal;
       return a.back9Gross - b.back9Gross;
     });
@@ -1833,16 +1880,33 @@ function LegsOpenTournament() {
                 Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
                   const holeData = courseHoles.find(h => h.hole === hole);
                   const canEdit = userRole === 'admin' || (userRole === 'group' && selectedGroup.id === userGroupId);
-                  return h('div', { key: hole, className: 'flex flex-col' },
+                  const isNR = playerScores[hole] === 'NR';
+                  return h('div', { key: hole, className: 'flex flex-col gap-1' },
                     h('label', { className: 'text-xs text-gray-500 text-center' }, `${hole} (${holeData?.par})`),
-                    h('input', {
-                      type: 'number',
-                      value: playerScores[hole] || '',
-                      onChange: canEdit ? (e) => updateScore(playerId, hole, e.target.value) : undefined,
-                      readOnly: !canEdit,
-                      className: `border border-gray-300 p-2 rounded text-center ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : ''}`,
-                      placeholder: '-'
-                    })
+                    isNR ?
+                      h('div', { className: 'relative' },
+                        h('div', { className: 'border border-orange-400 bg-orange-50 p-2 rounded text-center font-bold text-orange-700' }, 'NR'),
+                        canEdit && h('button', {
+                          onClick: () => updateScore(playerId, hole, ''),
+                          className: 'absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center hover:bg-red-600',
+                          title: 'Clear NR'
+                        }, '×')
+                      ) :
+                      h('div', { className: 'flex gap-1' },
+                        h('input', {
+                          type: 'number',
+                          value: playerScores[hole] || '',
+                          onChange: canEdit ? (e) => updateScore(playerId, hole, e.target.value) : undefined,
+                          readOnly: !canEdit,
+                          className: `flex-1 border border-gray-300 p-2 rounded text-center ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : ''}`,
+                          placeholder: '-'
+                        }),
+                        canEdit && h('button', {
+                          onClick: () => updateScore(playerId, hole, 'NR'),
+                          className: 'bg-orange-500 text-white px-1 text-xs rounded hover:bg-orange-600 font-bold',
+                          title: 'Mark as No Return'
+                        }, 'NR')
+                      )
                   );
                 })
               )
@@ -1862,6 +1926,7 @@ function LegsOpenTournament() {
   };
 
   const getScoreColorClass = (score, par) => {
+    if (score === 'NR') return 'score-nr'; // NR special color
     const diff = score - par;
     if (diff <= -2) return 'score-eagle'; // Eagle or better
     if (diff === -1) return 'score-birdie'; // Birdie
@@ -1954,10 +2019,19 @@ function LegsOpenTournament() {
                 const playerScores = scores[player.id] || {};
 
                 // Calculate front 9 and back 9 totals
-                const front9 = Array.from({ length: 9 }, (_, i) => i + 1)
-                  .reduce((sum, hole) => sum + (playerScores[hole] || 0), 0);
-                const back9 = Array.from({ length: 9 }, (_, i) => i + 10)
-                  .reduce((sum, hole) => sum + (playerScores[hole] || 0), 0);
+                const front9Scores = Array.from({ length: 9 }, (_, i) => i + 1)
+                  .map(hole => playerScores[hole]);
+                const hasFront9NR = front9Scores.some(s => s === 'NR');
+                const front9 = hasFront9NR ? 'NR' : front9Scores
+                  .filter(s => s && s !== 'NR')
+                  .reduce((sum, s) => sum + s, 0);
+
+                const back9Scores = Array.from({ length: 9 }, (_, i) => i + 10)
+                  .map(hole => playerScores[hole]);
+                const hasBack9NR = back9Scores.some(s => s === 'NR');
+                const back9 = hasBack9NR ? 'NR' : back9Scores
+                  .filter(s => s && s !== 'NR')
+                  .reduce((sum, s) => sum + s, 0);
 
                 return [
                   // Main row

@@ -221,6 +221,12 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--color-double-bogey);
 }
 
+.score-nr {
+  background-color: #fed7aa;
+  color: #ea580c;
+  font-weight: bold;
+}
+
 /* Total Score Display */
 .scorecard-total {
   margin-top: 0.75rem;
