@@ -779,30 +779,83 @@ function LegsOpenTournament() {
       const grossTotal = Object.values(playerScores).reduce((sum, s) => sum + s, 0);
       const playingHandicap = calculatePlayingHandicap(player.handicap);
       const netTotal = grossTotal - playingHandicap;
+
+      // Calculate stableford and also track back 9 scores for tie-breaking
       let stablefordTotal = 0;
+      let back9Gross = 0;
+      let back9Net = 0;
+      let back9Stableford = 0;
+
       for (let hole = 1; hole <= 18; hole++) {
-        if (playerScores[hole]) stablefordTotal += calculateStableford(playerScores[hole], hole, playingHandicap);
+        if (playerScores[hole]) {
+          const stablefordPoints = calculateStableford(playerScores[hole], hole, playingHandicap);
+          stablefordTotal += stablefordPoints;
+
+          // Track back 9 (holes 10-18)
+          if (hole >= 10) {
+            back9Gross += playerScores[hole];
+            back9Stableford += stablefordPoints;
+          }
+        }
       }
-      return { ...player, grossTotal, netTotal, stablefordTotal, playingHandicap };
+
+      // Calculate back 9 net
+      const back9PlayingHandicap = Math.floor(playingHandicap / 2);
+      back9Net = back9Gross - back9PlayingHandicap;
+
+      return {
+        ...player,
+        grossTotal,
+        netTotal,
+        stablefordTotal,
+        playingHandicap,
+        back9Gross,
+        back9Net,
+        back9Stableford
+      };
     }).filter(p => p.grossTotal > 0);
 
-    // Sort based on selected criteria
+    // Sort based on selected criteria with tie-breaking
     if (sortBy === 'gross') {
-      results.sort((a, b) => a.grossTotal - b.grossTotal);
+      results.sort((a, b) => {
+        // First compare gross totals
+        if (a.grossTotal !== b.grossTotal) return a.grossTotal - b.grossTotal;
+        // Tie-breaker: back 9 gross (lower is better)
+        return a.back9Gross - b.back9Gross;
+      });
     } else if (sortBy === 'stableford') {
-      results.sort((a, b) => b.stablefordTotal - a.stablefordTotal);
+      results.sort((a, b) => {
+        // First compare stableford totals
+        if (b.stablefordTotal !== a.stablefordTotal) return b.stablefordTotal - a.stablefordTotal;
+        // Tie-breaker: back 9 stableford (higher is better)
+        return b.back9Stableford - a.back9Stableford;
+      });
     } else {
-      results.sort((a, b) => a.netTotal - b.netTotal);
+      results.sort((a, b) => {
+        // First compare net totals
+        if (a.netTotal !== b.netTotal) return a.netTotal - b.netTotal;
+        // Tie-breaker: back 9 net (lower is better)
+        return a.back9Net - b.back9Net;
+      });
     }
 
-    // Determine winners (always based on net and stableford)
-    const sortedByNet = [...results].sort((a, b) => a.netTotal - b.netTotal);
+    // Determine winners (always based on net and stableford with tie-breaking)
+    const sortedByNet = [...results].sort((a, b) => {
+      if (a.netTotal !== b.netTotal) return a.netTotal - b.netTotal;
+      return a.back9Net - b.back9Net;
+    });
     const medalWinner = sortedByNet[0];
 
-    const sortedByStableford = [...results].sort((a, b) => b.stablefordTotal - a.stablefordTotal);
+    const sortedByStableford = [...results].sort((a, b) => {
+      if (b.stablefordTotal !== a.stablefordTotal) return b.stablefordTotal - a.stablefordTotal;
+      return b.back9Stableford - a.back9Stableford;
+    });
     const stablefordWinner = sortedByStableford.find(p => p.id !== medalWinner?.id);
 
-    const sortedByGross = [...results].sort((a, b) => a.grossTotal - b.grossTotal);
+    const sortedByGross = [...results].sort((a, b) => {
+      if (a.grossTotal !== b.grossTotal) return a.grossTotal - b.grossTotal;
+      return a.back9Gross - b.back9Gross;
+    });
     const grossWinner = sortedByGross.find(p => p.id !== medalWinner?.id && p.id !== stablefordWinner?.id);
 
     return { results, medalWinner, stablefordWinner, grossWinner };
