@@ -2341,7 +2341,16 @@ function LegsOpenTournament() {
                               }, netScore);
                             }),
                             h('div', { className: 'scorecard-score-subtotal' },
-                              hasFront9NR ? 'NR' : (front9 - Math.floor(player.playingHandicap / 2))
+                              hasFront9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 1)
+                                .reduce((sum, hole) => {
+                                  const score = playerScores[hole];
+                                  const holeData = courseHoles.find(h => h.hole === hole);
+                                  if (!score || score === 'NR' || !holeData) return sum;
+                                  const strokesReceived = player.playingHandicap >= holeData.strokeIndex ?
+                                    Math.floor(player.playingHandicap / 18) + 1 :
+                                    Math.floor(player.playingHandicap / 18);
+                                  return sum + (score - strokesReceived);
+                                }, 0)
                             )
                           ),
                           h('div', { className: 'scorecard-grid' },
@@ -2414,7 +2423,16 @@ function LegsOpenTournament() {
                               }, netScore);
                             }),
                             h('div', { className: 'scorecard-score-subtotal' },
-                              hasBack9NR ? 'NR' : (back9 - Math.ceil(player.playingHandicap / 2))
+                              hasBack9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 10)
+                                .reduce((sum, hole) => {
+                                  const score = playerScores[hole];
+                                  const holeData = courseHoles.find(h => h.hole === hole);
+                                  if (!score || score === 'NR' || !holeData) return sum;
+                                  const strokesReceived = player.playingHandicap >= holeData.strokeIndex ?
+                                    Math.floor(player.playingHandicap / 18) + 1 :
+                                    Math.floor(player.playingHandicap / 18);
+                                  return sum + (score - strokesReceived);
+                                }, 0)
                             )
                           ),
                           h('div', { className: 'scorecard-grid' },
