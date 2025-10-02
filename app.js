@@ -1601,7 +1601,7 @@ function LegsOpenTournament() {
   const getScoreColor = (score, par) => {
     const diff = score - par;
     if (diff <= -2) return 'bg-yellow-200'; // Eagle or better
-    if (diff === -1) return 'bg-green-100'; // Birdie
+    if (diff === -1) return 'bg-blue-100'; // Birdie
     if (diff === 0) return 'bg-white'; // Par
     if (diff === 1) return 'bg-orange-100'; // Bogey
     return 'bg-red-100'; // Double bogey or worse
