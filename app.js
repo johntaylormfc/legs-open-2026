@@ -2647,7 +2647,7 @@ function LegsOpenTournament() {
                                 }, 0);
                                 return [
                                   h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, points),
-                                  h('div', { key: 'pts-out', className: 'scorecard-score-subtotal' }, ptsOut)
+                                  h('div', { key: 'pts-out', className: 'scorecard-score-subtotal', style: { backgroundColor: '#FFBA00' } }, ptsOut)
                                 ];
                               } else if (hole === 18) {
                                 const ptsIn = hasBack9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 10).reduce((sum, h) => {
@@ -2657,8 +2657,8 @@ function LegsOpenTournament() {
                                 }, 0);
                                 return [
                                   h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, points),
-                                  h('div', { key: 'pts-in', className: 'scorecard-score-subtotal' }, ptsIn),
-                                  h('div', { key: 'pts-total', className: 'scorecard-score-subtotal' }, player.stablefordTotal)
+                                  h('div', { key: 'pts-in', className: 'scorecard-score-subtotal', style: { backgroundColor: '#FFBA00' } }, ptsIn),
+                                  h('div', { key: 'pts-total', className: 'scorecard-score-subtotal', style: { backgroundColor: '#FFBA00' } }, player.stablefordTotal)
                                 ];
                               }
                               return h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, points);
