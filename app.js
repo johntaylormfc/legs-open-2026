@@ -90,8 +90,9 @@ function LegsOpenTournament() {
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState('');
 
-  const [activeTab, setActiveTab] = useState('tournaments');
+  const [activeTab, setActiveTab] = useState('leaderboard');
   const [tournaments, setTournaments] = useState([]);
+  const [showCompletedTournaments, setShowCompletedTournaments] = useState(false);
   const [currentTournament, setCurrentTournament] = useState(null);
   const [allPlayers, setAllPlayers] = useState([]);
   const [tournamentPlayers, setTournamentPlayers] = useState([]);
@@ -1030,13 +1031,24 @@ function LegsOpenTournament() {
 
   // Render functions
   const renderTournamentsTab = () => {
+    // Filter tournaments based on showCompletedTournaments state
+    const filteredTournaments = showCompletedTournaments
+      ? tournaments
+      : tournaments.filter(t => t.status !== 'completed');
+
     return h('div', { className: 'space-y-6' },
       h('div', { className: 'flex justify-between items-center' },
         h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Tournaments'),
-        h('button', {
-          onClick: () => setShowCreateTournament(true),
-          className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
-        }, h(Icons.Plus, { size: 20 }), 'Create Tournament')
+        h('div', { className: 'flex gap-3' },
+          h('button', {
+            onClick: () => setShowCompletedTournaments(!showCompletedTournaments),
+            className: `px-4 py-2 rounded-lg font-semibold ${showCompletedTournaments ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-700'} hover:opacity-80`
+          }, showCompletedTournaments ? 'Hide Completed' : 'Show Completed'),
+          h('button', {
+            onClick: () => setShowCreateTournament(true),
+            className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
+          }, h(Icons.Plus, { size: 20 }), 'Create Tournament')
+        )
       ),
       showCreateTournament && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
         h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'New Tournament'),
@@ -1222,7 +1234,7 @@ function LegsOpenTournament() {
         )
       ),
       h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
-        tournaments.map(t => h('div', {
+        filteredTournaments.map(t => h('div', {
           key: t.id,
           onClick: () => {
             localStorage.setItem('selectedTournamentId', t.id);
@@ -2556,8 +2568,8 @@ function LegsOpenTournament() {
         h('div', { className: 'max-w-7xl mx-auto px-4' },
           h('div', { className: 'flex justify-center gap-1 overflow-x-auto' },
             (() => {
-              const allTabs = ['tournaments', 'course', 'setup', 'scoring', 'leaderboard', 'players', 'history'];
-              const groupTabs = ['scoring', 'leaderboard'];
+              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history'];
+              const groupTabs = ['leaderboard', 'scoring'];
               const visibleTabs = userRole === 'admin' ? allTabs : groupTabs;
 
               return visibleTabs.map(tab =>
@@ -2575,11 +2587,11 @@ function LegsOpenTournament() {
       )
     ),
     h('main', { className: 'max-w-7xl mx-auto px-4 py-8' },
+      activeTab === 'leaderboard' && renderLeaderboardTab(),
       activeTab === 'tournaments' && renderTournamentsTab(),
       activeTab === 'course' && renderCourseTab(),
       activeTab === 'setup' && renderSetupTab(),
       activeTab === 'scoring' && renderScoringTab(),
-      activeTab === 'leaderboard' && renderLeaderboardTab(),
       activeTab === 'players' && renderPlayersTab(),
       activeTab === 'history' && renderHistoryTab()
     )
