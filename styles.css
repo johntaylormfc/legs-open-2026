@@ -78,8 +78,8 @@ h1, h2, h3, h4, h5, h6 {
 
   /* Scorecard */
   --color-scorecard-hole-header: #111827;
-  --color-scorecard-par-bg: #e5e7eb;
-  --color-scorecard-score-bg: #dbeafe;
+  --color-scorecard-par-bg: #ffba00;
+  --color-scorecard-score-bg: #ffba00;
   --color-scorecard-subtotal-bg: #d1fae5;
   --color-scorecard-total-bg: #047857;
   --color-scorecard-total-text: #ffffff;
