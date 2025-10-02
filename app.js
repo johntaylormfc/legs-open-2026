@@ -2373,10 +2373,10 @@ function LegsOpenTournament() {
           h('table', { className: 'w-full' },
             h('thead', { className: 'leaderboard-header text-white' },
               h('tr', null,
-                h('th', { className: 'p-3 text-left' }, ''),
-                h('th', { className: 'p-3 text-left' }, 'Position'),
-                h('th', { className: 'p-3 text-left' }, 'Player'),
-                h('th', { className: 'p-3 text-center' },
+                h('th', { className: 'p-3 text-left', style: { backgroundColor: '#06051E' } }, ''),
+                h('th', { className: 'p-3 text-left', style: { backgroundColor: '#06051E' } }, 'Position'),
+                h('th', { className: 'p-3 text-left', style: { backgroundColor: '#06051E' } }, 'Player'),
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#06051E' } },
                   h('button', {
                     onClick: (e) => {
                       e.stopPropagation();
@@ -2385,7 +2385,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'netPar' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'NET PAR ▼')
                 ),
-                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#ffba00' } },
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#06051E' } },
                   h('button', {
                     onClick: (e) => {
                       e.stopPropagation();
@@ -2394,7 +2394,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'net' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'NET SCORE ▼')
                 ),
-                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#ffba00' } },
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#06051E' } },
                   h('button', {
                     onClick: (e) => {
                       e.stopPropagation();
@@ -2403,7 +2403,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'stableford' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'POINTS ▼')
                 ),
-                h('th', { className: 'p-3 text-center' },
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#06051E' } },
                   h('button', {
                     onClick: (e) => {
                       e.stopPropagation();
@@ -2412,7 +2412,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'grossPar' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'GROSS PAR ▼')
                 ),
-                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#ffba00' } },
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#06051E' } },
                   h('button', {
                     onClick: (e) => {
                       e.stopPropagation();
@@ -2421,7 +2421,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'gross' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'GROSS SCORE ▼')
                 ),
-                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#ffba00' } }, 'Hole')
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#06051E' } }, 'Hole')
               )
             ),
             h('tbody', null,
