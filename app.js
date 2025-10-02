@@ -1632,23 +1632,7 @@ function LegsOpenTournament() {
     const { results, medalWinner, stablefordWinner, grossWinner } = calculateResults(leaderboardSortBy);
 
     return h('div', { className: 'space-y-6' },
-      h('div', { className: 'flex justify-between items-center mb-4' },
-        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Leaderboard'),
-        h('div', { className: 'flex gap-2' },
-          h('button', {
-            onClick: () => setLeaderboardSortBy('net'),
-            className: `px-4 py-2 rounded font-semibold ${leaderboardSortBy === 'net' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
-          }, 'Sort by Net'),
-          h('button', {
-            onClick: () => setLeaderboardSortBy('gross'),
-            className: `px-4 py-2 rounded font-semibold ${leaderboardSortBy === 'gross' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
-          }, 'Sort by Gross'),
-          h('button', {
-            onClick: () => setLeaderboardSortBy('stableford'),
-            className: `px-4 py-2 rounded font-semibold ${leaderboardSortBy === 'stableford' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
-          }, 'Sort by Stableford')
-        )
-      ),
+      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Leaderboard'),
 
       medalWinner && h('div', { className: 'winner-medal p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
@@ -1690,9 +1674,33 @@ function LegsOpenTournament() {
                 h('th', { className: 'p-3 text-left' }, 'Player'),
                 h('th', { className: 'p-3 text-center' }, 'HCP'),
                 h('th', { className: 'p-3 text-center' }, 'Playing HCP'),
-                h('th', { className: 'p-3 text-center' }, 'Gross'),
-                h('th', { className: 'p-3 text-center' }, 'Net'),
-                h('th', { className: 'p-3 text-center' }, 'Stableford')
+                h('th', { className: 'p-3 text-center' },
+                  h('button', {
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      setLeaderboardSortBy('gross');
+                    },
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'gross' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                  }, 'Gross ▼')
+                ),
+                h('th', { className: 'p-3 text-center' },
+                  h('button', {
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      setLeaderboardSortBy('net');
+                    },
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'net' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                  }, 'Net ▼')
+                ),
+                h('th', { className: 'p-3 text-center' },
+                  h('button', {
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      setLeaderboardSortBy('stableford');
+                    },
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'stableford' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                  }, 'Stableford ▼')
+                )
               )
             ),
             h('tbody', null,
