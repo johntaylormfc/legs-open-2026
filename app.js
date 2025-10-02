@@ -2385,7 +2385,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'netPar' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'NET PAR ▼')
                 ),
-                h('th', { className: 'p-3 text-center' },
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#ffba00' } },
                   h('button', {
                     onClick: (e) => {
                       e.stopPropagation();
@@ -2394,7 +2394,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'net' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'NET SCORE ▼')
                 ),
-                h('th', { className: 'p-3 text-center' },
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#ffba00' } },
                   h('button', {
                     onClick: (e) => {
                       e.stopPropagation();
@@ -2412,7 +2412,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'grossPar' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'GROSS PAR ▼')
                 ),
-                h('th', { className: 'p-3 text-center' },
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#ffba00' } },
                   h('button', {
                     onClick: (e) => {
                       e.stopPropagation();
@@ -2421,7 +2421,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'gross' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'GROSS SCORE ▼')
                 ),
-                h('th', { className: 'p-3 text-center' }, 'Hole')
+                h('th', { className: 'p-3 text-center', style: { backgroundColor: '#ffba00' } }, 'Hole')
               )
             ),
             h('tbody', null,
