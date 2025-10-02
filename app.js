@@ -1038,42 +1038,6 @@ function LegsOpenTournament() {
           className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
         }, h(Icons.Plus, { size: 20 }), 'Create Tournament')
       ),
-
-      // App Logo Upload Section
-      h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800 flex items-center gap-2' },
-          h(Icons.Trophy, { size: 24 }),
-          'App Logo'
-        ),
-        h('div', { className: 'flex items-center gap-6' },
-          // Logo Preview
-          h('div', { className: 'w-32 h-32 flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-50' },
-            appLogo ?
-              h('img', {
-                src: appLogo,
-                alt: 'App Logo',
-                className: 'max-w-full max-h-full object-contain'
-              }) :
-              h('span', { className: 'text-gray-400 text-sm text-center px-2' }, 'No logo uploaded')
-          ),
-          // Upload Controls
-          h('div', { className: 'flex-1 space-y-3' },
-            h('label', {
-              className: `block w-full bg-blue-600 text-white text-center px-6 py-3 rounded-lg hover:bg-blue-700 cursor-pointer font-semibold ${uploadingAppLogo ? 'opacity-50 cursor-not-allowed' : ''}`
-            },
-              uploadingAppLogo ? 'Uploading...' : 'Upload App Logo',
-              h('input', {
-                type: 'file',
-                accept: 'image/*',
-                onChange: uploadAppLogo,
-                disabled: uploadingAppLogo,
-                className: 'hidden'
-              })
-            ),
-            h('p', { className: 'text-sm text-gray-500' }, 'Maximum size: 2MB. Recommended: Square image (e.g., 512x512px)')
-          )
-        )
-      ),
       showCreateTournament && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
         h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'New Tournament'),
         
@@ -1308,6 +1272,42 @@ function LegsOpenTournament() {
             )
           )
         ))
+      ),
+
+      // App Logo Upload Section (at bottom)
+      h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800 flex items-center gap-2' },
+          h(Icons.Trophy, { size: 24 }),
+          'App Logo'
+        ),
+        h('div', { className: 'flex items-center gap-6' },
+          // Logo Preview
+          h('div', { className: 'w-32 h-32 flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-50' },
+            appLogo ?
+              h('img', {
+                src: appLogo,
+                alt: 'App Logo',
+                className: 'max-w-full max-h-full object-contain'
+              }) :
+              h('span', { className: 'text-gray-400 text-sm text-center px-2' }, 'No logo uploaded')
+          ),
+          // Upload Controls
+          h('div', { className: 'flex-1 space-y-3' },
+            h('label', {
+              className: `block w-full bg-blue-600 text-white text-center px-6 py-3 rounded-lg hover:bg-blue-700 cursor-pointer font-semibold ${uploadingAppLogo ? 'opacity-50 cursor-not-allowed' : ''}`
+            },
+              uploadingAppLogo ? 'Uploading...' : 'Upload App Logo',
+              h('input', {
+                type: 'file',
+                accept: 'image/*',
+                onChange: uploadAppLogo,
+                disabled: uploadingAppLogo,
+                className: 'hidden'
+              })
+            ),
+            h('p', { className: 'text-sm text-gray-500' }, 'Maximum size: 2MB. Recommended: Square image (e.g., 512x512px)')
+          )
+        )
       )
     );
   };
@@ -1386,52 +1386,12 @@ function LegsOpenTournament() {
               )
             )
           ),
-
-          // Tournament Logo Upload
-          h('div', { className: 'border-t border-gray-200 pt-4 mt-4' },
-            h('h4', { className: 'font-semibold mb-3 text-green-800' }, 'Tournament Logo'),
-            h('div', { className: 'flex items-center gap-6' },
-              // Logo Preview
-              h('div', { className: 'w-32 h-32 flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-50' },
-                currentTournament.logo_url ?
-                  h('img', {
-                    src: currentTournament.logo_url,
-                    alt: 'Tournament Logo',
-                    className: 'max-w-full max-h-full object-contain'
-                  }) :
-                  h('span', { className: 'text-gray-400 text-sm text-center px-2' }, 'No logo uploaded')
-              ),
-              // Upload Controls
-              h('div', { className: 'flex-1 space-y-3' },
-                h('div', { className: 'flex gap-3' },
-                  h('label', {
-                    className: `flex-1 bg-blue-600 text-white text-center px-6 py-3 rounded-lg hover:bg-blue-700 cursor-pointer font-semibold ${uploadingTournamentLogo ? 'opacity-50 cursor-not-allowed' : ''}`
-                  },
-                    uploadingTournamentLogo ? 'Uploading...' : 'Upload Logo',
-                    h('input', {
-                      type: 'file',
-                      accept: 'image/*',
-                      onChange: uploadTournamentLogo,
-                      disabled: uploadingTournamentLogo,
-                      className: 'hidden'
-                    })
-                  ),
-                  currentTournament.logo_url && h('button', {
-                    onClick: removeTournamentLogo,
-                    className: 'bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 font-semibold'
-                  }, 'Remove Logo')
-                ),
-                h('p', { className: 'text-sm text-gray-500' }, 'Maximum size: 2MB. Recommended: Square image (e.g., 512x512px)')
-              )
-            )
-          ),
-
           h('button', {
             onClick: () => {
               updateTournamentDetails(currentTournament);
               setEditingTournament(false);
             },
-            className: 'bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold mt-4'
+            className: 'bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold'
           }, 'Save Tournament Details')
         ) : h('div', null,
           h('div', { className: 'flex items-center justify-between mb-3' },
@@ -1533,6 +1493,48 @@ function LegsOpenTournament() {
                 ) : h('td', { className: 'p-2 text-center' }, hole.strokeIndex)
               ))
             )
+          )
+        )
+      ),
+
+      // Tournament Logo Upload Section (at bottom)
+      h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-green-800 flex items-center gap-2' },
+          h(Icons.Trophy, { size: 24 }),
+          'Tournament Logo'
+        ),
+        h('div', { className: 'flex items-center gap-6' },
+          // Logo Preview
+          h('div', { className: 'w-32 h-32 flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-50' },
+            currentTournament.logo_url ?
+              h('img', {
+                src: currentTournament.logo_url,
+                alt: 'Tournament Logo',
+                className: 'max-w-full max-h-full object-contain'
+              }) :
+              h('span', { className: 'text-gray-400 text-sm text-center px-2' }, 'No logo uploaded')
+          ),
+          // Upload Controls
+          h('div', { className: 'flex-1 space-y-3' },
+            h('div', { className: 'flex gap-3' },
+              h('label', {
+                className: `flex-1 bg-blue-600 text-white text-center px-6 py-3 rounded-lg hover:bg-blue-700 cursor-pointer font-semibold ${uploadingTournamentLogo ? 'opacity-50 cursor-not-allowed' : ''}`
+              },
+                uploadingTournamentLogo ? 'Uploading...' : 'Upload Logo',
+                h('input', {
+                  type: 'file',
+                  accept: 'image/*',
+                  onChange: uploadTournamentLogo,
+                  disabled: uploadingTournamentLogo,
+                  className: 'hidden'
+                })
+              ),
+              currentTournament.logo_url && h('button', {
+                onClick: removeTournamentLogo,
+                className: 'bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 font-semibold'
+              }, 'Remove Logo')
+            ),
+            h('p', { className: 'text-sm text-gray-500' }, 'Maximum size: 2MB. Recommended: Square image (e.g., 512x512px)')
           )
         )
       )
