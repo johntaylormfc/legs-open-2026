@@ -2483,10 +2483,10 @@ function LegsOpenTournament() {
                           }
                         }, player.netToPar === 0 ? 'E' : player.netToPar > 0 ? `+${player.netToPar}` : player.netToPar)
                     ),
-                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } },
+                    h('td', { className: 'p-3 text-center font-bold' },
                       player.holesCompleted === 18 ? player.netTotal : '-'
                     ),
-                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } }, player.stablefordTotal),
+                    h('td', { className: 'p-3 text-center font-bold' }, player.stablefordTotal),
                     h('td', { className: 'p-3 text-center' },
                       player.grossToPar === 'NR' ?
                         h('span', null, 'NR') :
@@ -2501,15 +2501,15 @@ function LegsOpenTournament() {
                           }
                         }, player.grossToPar === 0 ? 'E' : player.grossToPar > 0 ? `+${player.grossToPar}` : player.grossToPar)
                     ),
-                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } },
+                    h('td', { className: 'p-3 text-center font-bold' },
                       player.holesCompleted === 18 ? player.grossTotal : '-'
                     ),
-                    h('td', { className: 'p-3 text-center', style: { backgroundColor: '#ffd162', color: '#06051e' } },
+                    h('td', { className: 'p-3 text-center' },
                       player.isIncomplete ?
-                        h('span', { className: 'px-2 py-1 rounded text-sm font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } },
+                        h('span', { className: 'px-2 py-1 rounded text-sm font-bold' },
                           player.currentHole
                         ) :
-                        h('span', { className: 'px-2 py-1 rounded text-sm font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } },
+                        h('span', { className: 'px-2 py-1 rounded text-sm font-bold' },
                           '18'
                         )
                     )
