@@ -278,8 +278,8 @@ function LegsOpenTournament() {
           const scoresMap = {};
           filtered.forEach(score => {
             if (!scoresMap[score.player_id]) scoresMap[score.player_id] = {};
-            // Convert 0 (database value for NR) back to 'NR' string
-            const displayValue = score.strokes === 0 ? 'NR' : score.strokes;
+            // Convert 99 (database value for NR) back to 'NR' string
+            const displayValue = score.strokes === 99 ? 'NR' : score.strokes;
             scoresMap[score.player_id][score.hole] = displayValue;
             if (displayValue === 'NR') {
               console.log(`LoadData: Player ${score.player_id}, Hole ${score.hole} loaded as NR (DB value: ${score.strokes})`);
@@ -868,8 +868,8 @@ function LegsOpenTournament() {
     }
 
     try {
-      // Handle NR (No Return) - store as 0 in database (we'll use 0 to represent NR)
-      const strokeValue = strokes === 'NR' ? 0 : parseInt(strokes);
+      // Handle NR (No Return) - store as 99 in database (impossibly high score to represent NR)
+      const strokeValue = strokes === 'NR' ? 99 : parseInt(strokes);
 
       console.log(`Updating score - Player: ${playerId}, Hole: ${hole}, Strokes: ${strokes}, DB Value: ${strokeValue}`);
 
