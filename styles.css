@@ -20,7 +20,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* General Effects */
 .trophy-gold {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: linear-gradient(135deg, #aaaaa8 0%, #FFA500 100%);
 }
 
 .classic-shadow {
