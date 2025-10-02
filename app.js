@@ -1876,39 +1876,113 @@ function LegsOpenTournament() {
                 h('h4', { className: 'font-bold text-lg' }, player.name),
                 h('span', { className: 'text-gray-600' }, `HCP: ${player.handicap}`)
               ),
-              h('div', { className: 'grid grid-cols-6 md:grid-cols-9 gap-2' },
-                Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
-                  const holeData = courseHoles.find(h => h.hole === hole);
-                  const canEdit = userRole === 'admin' || (userRole === 'group' && selectedGroup.id === userGroupId);
-                  const isNR = playerScores[hole] === 'NR';
-                  return h('div', { key: hole, className: 'flex flex-col gap-1' },
-                    h('label', { className: 'text-xs text-gray-500 text-center' }, `${hole} (${holeData?.par})`),
-                    isNR ?
-                      h('div', { className: 'relative' },
-                        h('div', { className: 'border border-orange-400 bg-orange-50 p-2 rounded text-center font-bold text-orange-700' }, 'NR'),
-                        canEdit && h('button', {
-                          onClick: () => updateScore(playerId, hole, ''),
-                          className: 'absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center hover:bg-red-600',
-                          title: 'Clear NR'
-                        }, '×')
-                      ) :
-                      h('div', { className: 'flex gap-1' },
-                        h('input', {
-                          type: 'number',
-                          value: playerScores[hole] || '',
-                          onChange: canEdit ? (e) => updateScore(playerId, hole, e.target.value) : undefined,
-                          readOnly: !canEdit,
-                          className: `flex-1 border border-gray-300 p-2 rounded text-center ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : ''}`,
-                          placeholder: '-'
-                        }),
-                        canEdit && h('button', {
-                          onClick: () => updateScore(playerId, hole, 'NR'),
-                          className: 'bg-orange-500 text-white px-1 text-xs rounded hover:bg-orange-600 font-bold',
-                          title: 'Mark as No Return'
-                        }, 'NR')
-                      )
-                  );
-                })
+              h('div', { className: 'space-y-2' },
+                // Front 9
+                h('div', null,
+                  h('p', { className: 'text-sm font-semibold text-gray-700 mb-1' }, 'Front 9'),
+                  h('div', { className: 'grid grid-cols-3 md:grid-cols-9 gap-2' },
+                    Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
+                      const holeData = courseHoles.find(h => h.hole === hole);
+                      const canEdit = userRole === 'admin' || (userRole === 'group' && selectedGroup.id === userGroupId);
+                      const isNR = playerScores[hole] === 'NR';
+                      return h('div', { key: hole, className: 'flex flex-col gap-1' },
+                        h('label', { className: 'text-xs text-gray-500 text-center font-semibold' }, `${hole}`),
+                        h('label', { className: 'text-xs text-gray-400 text-center' }, `Par ${holeData?.par}`),
+                        isNR ?
+                          h('div', { className: 'relative' },
+                            h('div', { className: 'border border-orange-400 bg-orange-50 p-2 rounded text-center font-bold text-orange-700 text-sm' }, 'NR'),
+                            canEdit && h('button', {
+                              onClick: (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateScore(playerId, hole, '');
+                              },
+                              className: 'absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-600',
+                              title: 'Clear NR'
+                            }, '×')
+                          ) :
+                          h('div', { className: 'flex flex-col gap-1' },
+                            h('input', {
+                              type: 'number',
+                              value: playerScores[hole] || '',
+                              onChange: canEdit ? (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateScore(playerId, hole, e.target.value);
+                              } : undefined,
+                              readOnly: !canEdit,
+                              className: `w-full border border-gray-300 p-2 rounded text-center ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : ''}`,
+                              placeholder: '-',
+                              min: '1',
+                              max: '15'
+                            }),
+                            canEdit && h('button', {
+                              onClick: (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateScore(playerId, hole, 'NR');
+                              },
+                              className: 'w-full bg-orange-500 text-white px-1 py-1 text-xs rounded hover:bg-orange-600 font-bold',
+                              title: 'Mark as No Return'
+                            }, 'NR')
+                          )
+                      );
+                    })
+                  )
+                ),
+                // Back 9
+                h('div', null,
+                  h('p', { className: 'text-sm font-semibold text-gray-700 mb-1' }, 'Back 9'),
+                  h('div', { className: 'grid grid-cols-3 md:grid-cols-9 gap-2' },
+                    Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
+                      const holeData = courseHoles.find(h => h.hole === hole);
+                      const canEdit = userRole === 'admin' || (userRole === 'group' && selectedGroup.id === userGroupId);
+                      const isNR = playerScores[hole] === 'NR';
+                      return h('div', { key: hole, className: 'flex flex-col gap-1' },
+                        h('label', { className: 'text-xs text-gray-500 text-center font-semibold' }, `${hole}`),
+                        h('label', { className: 'text-xs text-gray-400 text-center' }, `Par ${holeData?.par}`),
+                        isNR ?
+                          h('div', { className: 'relative' },
+                            h('div', { className: 'border border-orange-400 bg-orange-50 p-2 rounded text-center font-bold text-orange-700 text-sm' }, 'NR'),
+                            canEdit && h('button', {
+                              onClick: (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateScore(playerId, hole, '');
+                              },
+                              className: 'absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-600',
+                              title: 'Clear NR'
+                            }, '×')
+                          ) :
+                          h('div', { className: 'flex flex-col gap-1' },
+                            h('input', {
+                              type: 'number',
+                              value: playerScores[hole] || '',
+                              onChange: canEdit ? (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateScore(playerId, hole, e.target.value);
+                              } : undefined,
+                              readOnly: !canEdit,
+                              className: `w-full border border-gray-300 p-2 rounded text-center ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : ''}`,
+                              placeholder: '-',
+                              min: '1',
+                              max: '15'
+                            }),
+                            canEdit && h('button', {
+                              onClick: (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateScore(playerId, hole, 'NR');
+                              },
+                              className: 'w-full bg-orange-500 text-white px-1 py-1 text-xs rounded hover:bg-orange-600 font-bold',
+                              title: 'Mark as No Return'
+                            }, 'NR')
+                          )
+                      );
+                    })
+                  )
+                )
               )
             );
           })
