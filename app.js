@@ -129,6 +129,7 @@ function LegsOpenTournament() {
   const [availableTees, setAvailableTees] = useState([]);
   const [selectedTee, setSelectedTee] = useState(null);
   const [searchingCourses, setSearchingCourses] = useState(false);
+  const [expandedLeaderboardRows, setExpandedLeaderboardRows] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -1589,15 +1590,32 @@ function LegsOpenTournament() {
     );
   };
 
+  const toggleLeaderboardRow = (playerId) => {
+    setExpandedLeaderboardRows(prev =>
+      prev.includes(playerId)
+        ? prev.filter(id => id !== playerId)
+        : [...prev, playerId]
+    );
+  };
+
+  const getScoreColor = (score, par) => {
+    const diff = score - par;
+    if (diff <= -2) return 'bg-yellow-200'; // Eagle or better
+    if (diff === -1) return 'bg-green-100'; // Birdie
+    if (diff === 0) return 'bg-white'; // Par
+    if (diff === 1) return 'bg-orange-100'; // Bogey
+    return 'bg-red-100'; // Double bogey or worse
+  };
+
   const renderLeaderboardTab = () => {
     if (!currentTournament) {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
     }
     const { results, medalWinner, stablefordWinner } = calculateResults();
-    
+
     return h('div', { className: 'space-y-6' },
       h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Leaderboard'),
-      
+
       medalWinner && h('div', { className: 'bg-gradient-to-r from-yellow-400 to-yellow-600 p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
           h(Icons.Trophy, { size: 32 }),
@@ -1606,7 +1624,7 @@ function LegsOpenTournament() {
         h('p', { className: 'text-3xl font-bold' }, medalWinner.name),
         h('p', { className: 'text-xl' }, `Net Score: ${medalWinner.netTotal} (Gross: ${medalWinner.grossTotal})`)
       ),
-      
+
       stablefordWinner && h('div', { className: 'bg-gradient-to-r from-green-500 to-green-700 p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
           h(Icons.Award, { size: 32 }),
@@ -1615,7 +1633,7 @@ function LegsOpenTournament() {
         h('p', { className: 'text-3xl font-bold' }, stablefordWinner.name),
         h('p', { className: 'text-xl' }, `Points: ${stablefordWinner.stablefordTotal}`)
       ),
-      
+
       results.length === 0 ? h('div', { className: 'bg-white p-8 rounded-lg classic-shadow text-center text-gray-500' },
         h('p', { className: 'text-xl' }, 'No scores entered yet')
       ) :
@@ -1624,6 +1642,7 @@ function LegsOpenTournament() {
           h('table', { className: 'w-full' },
             h('thead', { className: 'bg-green-700 text-white' },
               h('tr', null,
+                h('th', { className: 'p-3 text-left' }, ''),
                 h('th', { className: 'p-3 text-left' }, 'Position'),
                 h('th', { className: 'p-3 text-left' }, 'Player'),
                 h('th', { className: 'p-3 text-center' }, 'HCP'),
@@ -1634,18 +1653,119 @@ function LegsOpenTournament() {
               )
             ),
             h('tbody', null,
-              results.map((player, index) => h('tr', {
-                key: player.id,
-                className: 'border-b border-gray-200 hover:bg-gray-50'
-              },
-                h('td', { className: 'p-3 font-bold' }, index + 1),
-                h('td', { className: 'p-3' }, player.name),
-                h('td', { className: 'p-3 text-center' }, player.handicap.toFixed(1)),
-                h('td', { className: 'p-3 text-center' }, player.playingHandicap),
-                h('td', { className: 'p-3 text-center' }, player.grossTotal),
-                h('td', { className: 'p-3 text-center font-bold' }, player.netTotal),
-                h('td', { className: 'p-3 text-center' }, player.stablefordTotal)
-              ))
+              results.map((player, index) => {
+                const isExpanded = expandedLeaderboardRows.includes(player.id);
+                const playerScores = scores[player.id] || {};
+
+                // Calculate front 9 and back 9 totals
+                const front9 = Array.from({ length: 9 }, (_, i) => i + 1)
+                  .reduce((sum, hole) => sum + (playerScores[hole] || 0), 0);
+                const back9 = Array.from({ length: 9 }, (_, i) => i + 10)
+                  .reduce((sum, hole) => sum + (playerScores[hole] || 0), 0);
+
+                return [
+                  // Main row
+                  h('tr', {
+                    key: player.id,
+                    className: 'border-b border-gray-200 hover:bg-gray-50 cursor-pointer',
+                    onClick: () => toggleLeaderboardRow(player.id)
+                  },
+                    h('td', { className: 'p-3 text-center' },
+                      h('span', { className: 'text-xl' }, isExpanded ? '▼' : '▶')
+                    ),
+                    h('td', { className: 'p-3 font-bold' }, index + 1),
+                    h('td', { className: 'p-3' }, player.name),
+                    h('td', { className: 'p-3 text-center' }, player.handicap.toFixed(1)),
+                    h('td', { className: 'p-3 text-center' }, player.playingHandicap),
+                    h('td', { className: 'p-3 text-center' }, player.grossTotal),
+                    h('td', { className: 'p-3 text-center font-bold' }, player.netTotal),
+                    h('td', { className: 'p-3 text-center' }, player.stablefordTotal)
+                  ),
+                  // Expanded scorecard row
+                  isExpanded && h('tr', {
+                    key: `${player.id}-expanded`,
+                    className: 'bg-gray-50'
+                  },
+                    h('td', { colSpan: 8, className: 'p-4' },
+                      h('div', { className: 'space-y-2' },
+                        h('h4', { className: 'font-bold text-green-800 mb-3' }, 'Scorecard'),
+                        // Front 9
+                        h('div', { className: 'mb-4' },
+                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
+                            h('div', { className: 'font-bold text-xs' }, 'Hole'),
+                            ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole =>
+                              h('div', { key: `hole-${hole}`, className: 'font-bold' }, hole)
+                            ),
+                            h('div', { className: 'font-bold bg-green-100 px-1' }, 'Out')
+                          ),
+                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
+                            h('div', { className: 'font-bold text-xs bg-gray-200 py-1' }, 'Par'),
+                            ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
+                              const holeData = courseHoles.find(h => h.hole === hole);
+                              return h('div', { key: `par-${hole}`, className: 'bg-gray-200 py-1' }, holeData?.par || '-');
+                            }),
+                            h('div', { className: 'bg-green-100 py-1 px-1 font-bold' },
+                              Array.from({ length: 9 }, (_, i) => i + 1)
+                                .reduce((sum, hole) => sum + (courseHoles.find(h => h.hole === hole)?.par || 0), 0)
+                            )
+                          ),
+                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
+                            h('div', { className: 'font-bold text-xs bg-blue-100 py-1' }, 'Score'),
+                            ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
+                              const holeData = courseHoles.find(h => h.hole === hole);
+                              const score = playerScores[hole];
+                              return h('div', {
+                                key: `score-${hole}`,
+                                className: `py-1 font-bold ${score && holeData ? getScoreColor(score, holeData.par) : 'bg-white'}`
+                              }, score || '-');
+                            }),
+                            h('div', { className: 'bg-blue-200 py-1 px-1 font-bold' }, front9 || '-')
+                          )
+                        ),
+                        // Back 9
+                        h('div', null,
+                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
+                            h('div', { className: 'font-bold text-xs' }, 'Hole'),
+                            ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole =>
+                              h('div', { key: `hole-${hole}`, className: 'font-bold' }, hole)
+                            ),
+                            h('div', { className: 'font-bold bg-green-100 px-1' }, 'In')
+                          ),
+                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
+                            h('div', { className: 'font-bold text-xs bg-gray-200 py-1' }, 'Par'),
+                            ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
+                              const holeData = courseHoles.find(h => h.hole === hole);
+                              return h('div', { key: `par-${hole}`, className: 'bg-gray-200 py-1' }, holeData?.par || '-');
+                            }),
+                            h('div', { className: 'bg-green-100 py-1 px-1 font-bold' },
+                              Array.from({ length: 9 }, (_, i) => i + 10)
+                                .reduce((sum, hole) => sum + (courseHoles.find(h => h.hole === hole)?.par || 0), 0)
+                            )
+                          ),
+                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
+                            h('div', { className: 'font-bold text-xs bg-blue-100 py-1' }, 'Score'),
+                            ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
+                              const holeData = courseHoles.find(h => h.hole === hole);
+                              const score = playerScores[hole];
+                              return h('div', {
+                                key: `score-${hole}`,
+                                className: `py-1 font-bold ${score && holeData ? getScoreColor(score, holeData.par) : 'bg-white'}`
+                              }, score || '-');
+                            }),
+                            h('div', { className: 'bg-blue-200 py-1 px-1 font-bold' }, back9 || '-')
+                          )
+                        ),
+                        // Total
+                        h('div', { className: 'mt-3 flex justify-end' },
+                          h('div', { className: 'bg-green-700 text-white px-4 py-2 rounded font-bold' },
+                            `Total: ${player.grossTotal}`
+                          )
+                        )
+                      )
+                    )
+                  )
+                ];
+              }).flat()
             )
           )
         )
