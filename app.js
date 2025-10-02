@@ -1598,13 +1598,13 @@ function LegsOpenTournament() {
     );
   };
 
-  const getScoreColor = (score, par) => {
+  const getScoreColorClass = (score, par) => {
     const diff = score - par;
-    if (diff <= -2) return 'bg-yellow-200'; // Eagle or better
-    if (diff === -1) return 'bg-green-100'; // Birdie
-    if (diff === 0) return 'bg-white'; // Par
-    if (diff === 1) return 'bg-orange-100'; // Bogey
-    return 'bg-red-100'; // Double bogey or worse
+    if (diff <= -2) return 'score-eagle'; // Eagle or better
+    if (diff === -1) return 'score-birdie'; // Birdie
+    if (diff === 0) return 'score-par'; // Par
+    if (diff === 1) return 'score-bogey'; // Bogey
+    return 'score-double-bogey'; // Double bogey or worse
   };
 
   const renderLeaderboardTab = () => {
@@ -1616,7 +1616,7 @@ function LegsOpenTournament() {
     return h('div', { className: 'space-y-6' },
       h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Leaderboard'),
 
-      medalWinner && h('div', { className: 'bg-gradient-to-r from-yellow-400 to-yellow-600 p-6 rounded-lg classic-shadow text-white' },
+      medalWinner && h('div', { className: 'winner-medal p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
           h(Icons.Trophy, { size: 32 }),
           h('h3', { className: 'text-2xl font-bold' }, 'Medal Winner')
@@ -1625,7 +1625,7 @@ function LegsOpenTournament() {
         h('p', { className: 'text-xl' }, `Net Score: ${medalWinner.netTotal} (Gross: ${medalWinner.grossTotal})`)
       ),
 
-      stablefordWinner && h('div', { className: 'bg-gradient-to-r from-green-500 to-green-700 p-6 rounded-lg classic-shadow text-white' },
+      stablefordWinner && h('div', { className: 'winner-stableford p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
           h(Icons.Award, { size: 32 }),
           h('h3', { className: 'text-2xl font-bold' }, 'Stableford Winner')
@@ -1640,7 +1640,7 @@ function LegsOpenTournament() {
       h('div', { className: 'bg-white rounded-lg classic-shadow overflow-hidden' },
         h('div', { className: 'overflow-x-auto' },
           h('table', { className: 'w-full' },
-            h('thead', { className: 'bg-green-700 text-white' },
+            h('thead', { className: 'leaderboard-header text-white' },
               h('tr', null,
                 h('th', { className: 'p-3 text-left' }, ''),
                 h('th', { className: 'p-3 text-left' }, 'Position'),
@@ -1667,11 +1667,11 @@ function LegsOpenTournament() {
                   // Main row
                   h('tr', {
                     key: player.id,
-                    className: 'border-b border-gray-200 hover:bg-gray-50 cursor-pointer',
+                    className: 'leaderboard-row',
                     onClick: () => toggleLeaderboardRow(player.id)
                   },
                     h('td', { className: 'p-3 text-center' },
-                      h('span', { className: 'text-xl' }, isExpanded ? '▼' : '▶')
+                      h('span', { className: 'accordion-icon' }, isExpanded ? '▼' : '▶')
                     ),
                     h('td', { className: 'p-3 font-bold' }, index + 1),
                     h('td', { className: 'p-3' }, player.name),
@@ -1684,80 +1684,80 @@ function LegsOpenTournament() {
                   // Expanded scorecard row
                   isExpanded && h('tr', {
                     key: `${player.id}-expanded`,
-                    className: 'bg-gray-50'
+                    className: 'leaderboard-expanded-row'
                   },
-                    h('td', { colSpan: 8, className: 'p-4' },
+                    h('td', { colSpan: 8, className: 'scorecard-container' },
                       h('div', { className: 'space-y-2' },
-                        h('h4', { className: 'font-bold text-green-800 mb-3' }, 'Scorecard'),
+                        h('h4', { className: 'scorecard-title' }, 'Scorecard'),
                         // Front 9
-                        h('div', { className: 'mb-4' },
-                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
-                            h('div', { className: 'font-bold text-xs' }, 'Hole'),
+                        h('div', { className: 'scorecard-section' },
+                          h('div', { className: 'scorecard-grid' },
+                            h('div', { className: 'scorecard-label' }, 'Hole'),
                             ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole =>
-                              h('div', { key: `hole-${hole}`, className: 'font-bold' }, hole)
+                              h('div', { key: `hole-${hole}`, className: 'scorecard-hole-number' }, hole)
                             ),
-                            h('div', { className: 'font-bold bg-green-100 px-1' }, 'Out')
+                            h('div', { className: 'scorecard-subtotal-header' }, 'Out')
                           ),
-                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
-                            h('div', { className: 'font-bold text-xs bg-gray-200 py-1' }, 'Par'),
+                          h('div', { className: 'scorecard-grid' },
+                            h('div', { className: 'scorecard-par-label' }, 'Par'),
                             ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
                               const holeData = courseHoles.find(h => h.hole === hole);
-                              return h('div', { key: `par-${hole}`, className: 'bg-gray-200 py-1' }, holeData?.par || '-');
+                              return h('div', { key: `par-${hole}`, className: 'scorecard-par-cell' }, holeData?.par || '-');
                             }),
-                            h('div', { className: 'bg-green-100 py-1 px-1 font-bold' },
+                            h('div', { className: 'scorecard-par-subtotal' },
                               Array.from({ length: 9 }, (_, i) => i + 1)
                                 .reduce((sum, hole) => sum + (courseHoles.find(h => h.hole === hole)?.par || 0), 0)
                             )
                           ),
-                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
-                            h('div', { className: 'font-bold text-xs bg-blue-100 py-1' }, 'Score'),
+                          h('div', { className: 'scorecard-grid' },
+                            h('div', { className: 'scorecard-score-label' }, 'Score'),
                             ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
                               const holeData = courseHoles.find(h => h.hole === hole);
                               const score = playerScores[hole];
                               return h('div', {
                                 key: `score-${hole}`,
-                                className: `py-1 font-bold ${score && holeData ? getScoreColor(score, holeData.par) : 'bg-white'}`
+                                className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}`
                               }, score || '-');
                             }),
-                            h('div', { className: 'bg-blue-200 py-1 px-1 font-bold' }, front9 || '-')
+                            h('div', { className: 'scorecard-score-subtotal' }, front9 || '-')
                           )
                         ),
                         // Back 9
-                        h('div', null,
-                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
-                            h('div', { className: 'font-bold text-xs' }, 'Hole'),
+                        h('div', { className: 'scorecard-section' },
+                          h('div', { className: 'scorecard-grid' },
+                            h('div', { className: 'scorecard-label' }, 'Hole'),
                             ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole =>
-                              h('div', { key: `hole-${hole}`, className: 'font-bold' }, hole)
+                              h('div', { key: `hole-${hole}`, className: 'scorecard-hole-number' }, hole)
                             ),
-                            h('div', { className: 'font-bold bg-green-100 px-1' }, 'In')
+                            h('div', { className: 'scorecard-subtotal-header' }, 'In')
                           ),
-                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
-                            h('div', { className: 'font-bold text-xs bg-gray-200 py-1' }, 'Par'),
+                          h('div', { className: 'scorecard-grid' },
+                            h('div', { className: 'scorecard-par-label' }, 'Par'),
                             ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
                               const holeData = courseHoles.find(h => h.hole === hole);
-                              return h('div', { key: `par-${hole}`, className: 'bg-gray-200 py-1' }, holeData?.par || '-');
+                              return h('div', { key: `par-${hole}`, className: 'scorecard-par-cell' }, holeData?.par || '-');
                             }),
-                            h('div', { className: 'bg-green-100 py-1 px-1 font-bold' },
+                            h('div', { className: 'scorecard-par-subtotal' },
                               Array.from({ length: 9 }, (_, i) => i + 10)
                                 .reduce((sum, hole) => sum + (courseHoles.find(h => h.hole === hole)?.par || 0), 0)
                             )
                           ),
-                          h('div', { className: 'grid grid-cols-11 gap-1 text-center text-sm' },
-                            h('div', { className: 'font-bold text-xs bg-blue-100 py-1' }, 'Score'),
+                          h('div', { className: 'scorecard-grid' },
+                            h('div', { className: 'scorecard-score-label' }, 'Score'),
                             ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
                               const holeData = courseHoles.find(h => h.hole === hole);
                               const score = playerScores[hole];
                               return h('div', {
                                 key: `score-${hole}`,
-                                className: `py-1 font-bold ${score && holeData ? getScoreColor(score, holeData.par) : 'bg-white'}`
+                                className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}`
                               }, score || '-');
                             }),
-                            h('div', { className: 'bg-blue-200 py-1 px-1 font-bold' }, back9 || '-')
+                            h('div', { className: 'scorecard-score-subtotal' }, back9 || '-')
                           )
                         ),
                         // Total
-                        h('div', { className: 'mt-3 flex justify-end' },
-                          h('div', { className: 'bg-green-700 text-white px-4 py-2 rounded font-bold' },
+                        h('div', { className: 'scorecard-total' },
+                          h('div', { className: 'scorecard-total-badge' },
                             `Total: ${player.grossTotal}`
                           )
                         )
