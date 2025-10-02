@@ -2052,10 +2052,13 @@ function LegsOpenTournament() {
     }
     const { results, medalWinner, stablefordWinner, grossWinner } = calculateResults(leaderboardSortBy);
 
+    // Check if all players have completed all 18 holes
+    const allScoresComplete = results.length > 0 && results.every(player => player.holesCompleted === 18);
+
     return h('div', { className: 'space-y-6' },
       h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Leaderboard'),
 
-      medalWinner && h('div', { className: 'winner-medal p-6 rounded-lg classic-shadow text-white' },
+      allScoresComplete && medalWinner && h('div', { className: 'winner-medal p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
           h(Icons.Trophy, { size: 32 }),
           h('h3', { className: 'text-2xl font-bold' }, 'Medal Winner')
@@ -2064,7 +2067,7 @@ function LegsOpenTournament() {
         h('p', { className: 'text-xl' }, `Net Score: ${medalWinner.netTotal} (Gross: ${medalWinner.grossTotal})`)
       ),
 
-      stablefordWinner && h('div', { className: 'winner-stableford p-6 rounded-lg classic-shadow text-white' },
+      allScoresComplete && stablefordWinner && h('div', { className: 'winner-stableford p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
           h(Icons.Award, { size: 32 }),
           h('h3', { className: 'text-2xl font-bold' }, 'Stableford Winner')
@@ -2073,7 +2076,7 @@ function LegsOpenTournament() {
         h('p', { className: 'text-xl' }, `Points: ${stablefordWinner.stablefordTotal}`)
       ),
 
-      grossWinner && h('div', { className: 'winner-gross p-6 rounded-lg classic-shadow text-white' },
+      allScoresComplete && grossWinner && h('div', { className: 'winner-gross p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
           h(Icons.Award, { size: 32 }),
           h('h3', { className: 'text-2xl font-bold' }, 'Gross Winner')
