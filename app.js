@@ -2308,6 +2308,24 @@ function LegsOpenTournament() {
     return 'score-double-bogey'; // Double bogey or worse
   };
 
+  // Helper function to get style for subtotal cells (OUT/IN/TOTAL)
+  const getSubtotalStyle = (score, par) => {
+    if (score === 'NR' || score === '-' || par === 0) {
+      return {};
+    }
+    const diff = score - par;
+    if (diff < 0) {
+      // Better than par - Red background, white text
+      return { backgroundColor: '#E4002B', color: '#ffffff', fontWeight: 'bold' };
+    } else if (diff === 0) {
+      // Level par - Gray background, white text
+      return { backgroundColor: '#B7B7B7', color: '#ffffff', fontWeight: 'bold' };
+    } else {
+      // Worse than par - Blue background, white text
+      return { backgroundColor: '#08325A', color: '#ffffff', fontWeight: 'bold' };
+    }
+  };
+
   const renderLeaderboardTab = () => {
     if (!currentTournament) {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
@@ -2425,6 +2443,13 @@ function LegsOpenTournament() {
                 const back9 = hasBack9NR ? 'NR' : back9Scores
                   .filter(s => s && s !== 'NR')
                   .reduce((sum, s) => sum + s, 0);
+
+                // Calculate par for front 9, back 9, and total
+                const front9Par = Array.from({ length: 9 }, (_, i) => i + 1)
+                  .reduce((sum, h) => sum + (courseHoles.find(c => c.hole === h)?.par || 0), 0);
+                const back9Par = Array.from({ length: 9 }, (_, i) => i + 10)
+                  .reduce((sum, h) => sum + (courseHoles.find(c => c.hole === h)?.par || 0), 0);
+                const totalPar = front9Par + back9Par;
 
                 return [
                   // Main row
@@ -2548,13 +2573,13 @@ function LegsOpenTournament() {
                               if (hole === 9) {
                                 return [
                                   h('div', { key: `gross-${hole}`, className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}` }, score || '-'),
-                                  h('div', { key: 'gross-out', className: 'scorecard-score-subtotal' }, front9 || '-')
+                                  h('div', { key: 'gross-out', className: 'scorecard-score-subtotal', style: getSubtotalStyle(front9, front9Par) }, front9 || '-')
                                 ];
                               } else if (hole === 18) {
                                 return [
                                   h('div', { key: `gross-${hole}`, className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}` }, score || '-'),
-                                  h('div', { key: 'gross-in', className: 'scorecard-score-subtotal' }, back9 || '-'),
-                                  h('div', { key: 'gross-total', className: 'scorecard-score-subtotal' }, player.grossTotal)
+                                  h('div', { key: 'gross-in', className: 'scorecard-score-subtotal', style: getSubtotalStyle(back9, back9Par) }, back9 || '-'),
+                                  h('div', { key: 'gross-total', className: 'scorecard-score-subtotal', style: getSubtotalStyle(player.grossTotal, totalPar) }, player.grossTotal)
                                 ];
                               }
                               return h('div', { key: `gross-${hole}`, className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}` }, score || '-');
@@ -2583,7 +2608,7 @@ function LegsOpenTournament() {
                                 }, 0);
                                 return [
                                   h('div', { key: `net-${hole}`, className: netScore === '-' ? 'scorecard-score-cell' : `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}` }, netScore),
-                                  h('div', { key: 'net-out', className: 'scorecard-score-subtotal' }, netOut)
+                                  h('div', { key: 'net-out', className: 'scorecard-score-subtotal', style: getSubtotalStyle(netOut, front9Par) }, netOut)
                                 ];
                               } else if (hole === 18) {
                                 const netIn = hasBack9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 10).reduce((sum, h) => {
@@ -2595,8 +2620,8 @@ function LegsOpenTournament() {
                                 }, 0);
                                 return [
                                   h('div', { key: `net-${hole}`, className: netScore === '-' ? 'scorecard-score-cell' : `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}` }, netScore),
-                                  h('div', { key: 'net-in', className: 'scorecard-score-subtotal' }, netIn),
-                                  h('div', { key: 'net-total', className: 'scorecard-score-subtotal' }, player.netTotal)
+                                  h('div', { key: 'net-in', className: 'scorecard-score-subtotal', style: getSubtotalStyle(netIn, back9Par) }, netIn),
+                                  h('div', { key: 'net-total', className: 'scorecard-score-subtotal', style: getSubtotalStyle(player.netTotal, totalPar) }, player.netTotal)
                                 ];
                               }
                               return h('div', { key: `net-${hole}`, className: netScore === '-' ? 'scorecard-score-cell' : `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}` }, netScore);
