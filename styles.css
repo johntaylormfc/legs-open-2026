@@ -64,11 +64,11 @@ h1, h2, h3, h4, h5, h6 {
   --color-gross-to: #1d4ed8;
 
   /* Score Colors */
-  --color-eagle: ##910149;
-  --color-birdie: ##E4002B;
-  --color-par: ##B7B7B7;
-  --color-bogey: ##08325A;
-  --color-double-bogey: ##08325A;
+  --color-eagle: #910149;
+  --color-birdie: #E4002B;
+  --color-par: #B7B7B7;
+  --color-bogey: #08325A;
+  --color-double-bogey: #08325A;
 
   /* Leaderboard */
   --color-leaderboard-header: #1a0e56;
