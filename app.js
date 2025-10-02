@@ -2231,7 +2231,8 @@ function LegsOpenTournament() {
                     key: player.id,
                     className: 'leaderboard-row',
                     style: {
-                      backgroundColor: '#ffba00'
+                      backgroundColor: '#ffba00',
+                      borderBottom: '1px solid #e3a408'
                     },
                     onClick: () => toggleLeaderboardRow(player.id)
                   },
