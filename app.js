@@ -2481,10 +2481,10 @@ function LegsOpenTournament() {
                           }
                         }, player.netToPar === 0 ? 'E' : player.netToPar > 0 ? `+${player.netToPar}` : player.netToPar)
                     ),
-                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#FFD162', color: '#000000' } },
+                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } },
                       player.holesCompleted === 18 ? player.netTotal : '-'
                     ),
-                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#FFD162', color: '#000000' } }, player.stablefordTotal),
+                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } }, player.stablefordTotal),
                     h('td', { className: 'p-3 text-center' },
                       player.grossToPar === 'NR' ?
                         h('span', null, 'NR') :
