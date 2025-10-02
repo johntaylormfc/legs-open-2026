@@ -1900,19 +1900,10 @@ function LegsOpenTournament() {
             `Group PIN: ${selectedGroup.pin}`
           )
         ),
-        // Debug info for admin
-        userRole === 'admin' && h('div', { className: 'mb-4 p-3 bg-blue-50 rounded text-xs' },
-          h('p', { className: 'font-bold text-blue-900' }, 'Debug Info:'),
-          h('p', { className: 'text-blue-700' }, `Player IDs in group: ${selectedGroup.player_ids?.length || 0}`),
-          h('p', { className: 'text-blue-700' }, `IDs: ${JSON.stringify(selectedGroup.player_ids)}`)
-        ),
         h('div', { className: 'space-y-4' },
           selectedGroup.player_ids?.map(playerId => {
             const player = allPlayers.find(p => p.id === playerId);
-            if (!player) {
-              console.warn(`Player not found for ID: ${playerId}`);
-              return null;
-            }
+            if (!player) return null;
             const playerScores = scores[playerId] || {};
             return h('div', {
               key: playerId,
