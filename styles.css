@@ -129,6 +129,7 @@ h1, h2, h3, h4, h5, h6 {
 /* ==================== SCORECARD STYLES ==================== */
 .scorecard-container {
   padding: 1rem;
+  background-color: #ffffff;
 }
 
 .scorecard-title {
@@ -139,29 +140,41 @@ h1, h2, h3, h4, h5, h6 {
 
 .scorecard-grid {
   display: grid;
-  grid-template-columns: auto repeat(9, 1fr) auto repeat(9, 1fr) auto auto;
-  gap: 0.25rem;
+  grid-template-columns: minmax(60px, auto) repeat(9, minmax(32px, 1fr)) minmax(40px, auto) repeat(9, minmax(32px, 1fr)) minmax(40px, auto) minmax(50px, auto);
+  gap: 2px;
   text-align: center;
   font-size: 0.875rem;
   overflow-x: auto;
+  align-items: stretch;
 }
 
 /* Scorecard Row Labels */
 .scorecard-label {
   font-weight: bold;
   font-size: 0.75rem;
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Scorecard Headers (Hole numbers) */
 .scorecard-hole-number {
   font-weight: bold;
   color: var(--color-scorecard-hole-header);
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .scorecard-subtotal-header {
   font-weight: bold;
   background-color: var(--color-scorecard-subtotal-bg);
-  padding: 0 0.25rem;
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Par Row */
@@ -169,18 +182,29 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: bold;
   font-size: 0.75rem;
   background-color: var(--color-scorecard-par-bg);
-  padding: 0.25rem 0;
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .scorecard-par-cell {
   background-color: var(--color-scorecard-par-bg);
-  padding: 0.25rem 0;
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
 }
 
 .scorecard-par-subtotal {
   background-color: var(--color-scorecard-subtotal-bg);
-  padding: 0.25rem 0.25rem;
+  padding: 0.5rem 0.25rem;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
 }
 
 /* Score Row */
@@ -188,18 +212,29 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: bold;
   font-size: 0.75rem;
   background-color: var(--color-scorecard-score-bg);
-  padding: 0.25rem 0;
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .scorecard-score-cell {
-  padding: 0.25rem 0;
+  padding: 0.5rem 0.25rem;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
 }
 
 .scorecard-score-subtotal {
   background-color: #bfdbfe;
-  padding: 0.25rem 0.25rem;
+  padding: 0.5rem 0.25rem;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
 }
 
 /* Score Color Classes */
@@ -247,6 +282,10 @@ h1, h2, h3, h4, h5, h6 {
 /* Section Spacing */
 .scorecard-section {
   margin-bottom: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-color: #ffffff;
 }
 
 /* ==================== UTILITY CLASSES FOR THEMING ==================== */
