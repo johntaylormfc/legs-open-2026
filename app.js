@@ -2637,7 +2637,7 @@ function LegsOpenTournament() {
                               return h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, points);
                             }).flat()
                           ),
-                        // Total
+                          // Total
                         h('div', { className: 'scorecard-total' },
                           h('div', { className: 'scorecard-total-badge' },
                             `Total: ${player.grossTotal}`
