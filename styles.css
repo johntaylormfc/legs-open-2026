@@ -139,10 +139,11 @@ h1, h2, h3, h4, h5, h6 {
 
 .scorecard-grid {
   display: grid;
-  grid-template-columns: repeat(11, 1fr);
+  grid-template-columns: auto repeat(9, 1fr) auto repeat(9, 1fr) auto auto;
   gap: 0.25rem;
   text-align: center;
   font-size: 0.875rem;
+  overflow-x: auto;
 }
 
 /* Scorecard Row Labels */

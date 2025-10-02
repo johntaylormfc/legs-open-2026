@@ -2459,7 +2459,7 @@ function LegsOpenTournament() {
                     h('td', { className: 'p-3 text-center font-bold' },
                       player.holesCompleted === 18 ? player.netTotal : '-'
                     ),
-                    h('td', { className: 'p-3 text-center' }, player.stablefordTotal),
+                    h('td', { className: 'p-3 text-center font-bold' }, player.stablefordTotal),
                     h('td', { className: 'p-3 text-center' },
                       player.grossToPar === 'NR' ?
                         h('span', null, 'NR') :
@@ -2474,7 +2474,7 @@ function LegsOpenTournament() {
                           }
                         }, player.grossToPar === 0 ? 'E' : player.grossToPar > 0 ? `+${player.grossToPar}` : player.grossToPar)
                     ),
-                    h('td', { className: 'p-3 text-center' },
+                    h('td', { className: 'p-3 text-center font-bold' },
                       player.holesCompleted === 18 ? player.grossTotal : '-'
                     ),
                     h('td', { className: 'p-3 text-center' },
@@ -2483,7 +2483,7 @@ function LegsOpenTournament() {
                           player.currentHole
                         ) :
                         h('span', { className: 'px-2 py-1 bg-primary-light text-white rounded text-sm font-bold' },
-                          player.currentHole === 'Finished' ? '✓ Complete' : player.currentHole
+                          '18'
                         )
                     )
                   ),
@@ -2495,170 +2495,148 @@ function LegsOpenTournament() {
                     h('td', { colSpan: 10, className: 'scorecard-container' },
                       h('div', { className: 'space-y-2' },
                         h('h4', { className: 'scorecard-title' }, 'Scorecard'),
-                        // Front 9
+                        // All 18 holes in one row
                         h('div', { className: 'scorecard-section' },
+                          // Hole numbers
                           h('div', { className: 'scorecard-grid' },
                             h('div', { className: 'scorecard-label' }, 'Hole'),
                             ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole =>
                               h('div', { key: `hole-${hole}`, className: 'scorecard-hole-number' }, hole)
                             ),
-                            h('div', { className: 'scorecard-subtotal-header' }, 'Out')
-                          ),
-                          h('div', { className: 'scorecard-grid' },
-                            h('div', { className: 'scorecard-par-label' }, 'Par'),
-                            ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
-                              const holeData = courseHoles.find(h => h.hole === hole);
-                              return h('div', { key: `par-${hole}`, className: 'scorecard-par-cell' }, holeData?.par || '-');
-                            }),
-                            h('div', { className: 'scorecard-par-subtotal' },
-                              Array.from({ length: 9 }, (_, i) => i + 1)
-                                .reduce((sum, hole) => sum + (courseHoles.find(h => h.hole === hole)?.par || 0), 0)
-                            )
-                          ),
-                          h('div', { className: 'scorecard-grid' },
-                            h('div', { className: 'scorecard-score-label' }, 'Gross'),
-                            ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
-                              const holeData = courseHoles.find(h => h.hole === hole);
-                              const score = playerScores[hole];
-                              return h('div', {
-                                key: `score-${hole}`,
-                                className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}`
-                              }, score || '-');
-                            }),
-                            h('div', { className: 'scorecard-score-subtotal' }, front9 || '-')
-                          ),
-                          h('div', { className: 'scorecard-grid' },
-                            h('div', { className: 'scorecard-score-label' }, 'Net'),
-                            ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
-                              const holeData = courseHoles.find(h => h.hole === hole);
-                              const score = playerScores[hole];
-                              if (!score || score === 'NR' || !holeData) return h('div', { key: `net-${hole}`, className: 'scorecard-score-cell' }, '-');
-                              const strokesReceived = player.playingHandicap >= holeData.strokeIndex ?
-                                Math.floor(player.playingHandicap / 18) + 1 :
-                                Math.floor(player.playingHandicap / 18);
-                              const netScore = score - strokesReceived;
-                              return h('div', {
-                                key: `net-${hole}`,
-                                className: `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}`
-                              }, netScore);
-                            }),
-                            h('div', { className: 'scorecard-score-subtotal' },
-                              hasFront9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 1)
-                                .reduce((sum, hole) => {
-                                  const score = playerScores[hole];
-                                  const holeData = courseHoles.find(h => h.hole === hole);
-                                  if (!score || score === 'NR' || !holeData) return sum;
-                                  const strokesReceived = player.playingHandicap >= holeData.strokeIndex ?
-                                    Math.floor(player.playingHandicap / 18) + 1 :
-                                    Math.floor(player.playingHandicap / 18);
-                                  return sum + (score - strokesReceived);
-                                }, 0)
-                            )
-                          ),
-                          h('div', { className: 'scorecard-grid' },
-                            h('div', { className: 'scorecard-score-label' }, 'Points'),
-                            ...Array.from({ length: 9 }, (_, i) => i + 1).map(hole => {
-                              const holeData = courseHoles.find(h => h.hole === hole);
-                              const score = playerScores[hole];
-                              if (!score || score === 'NR' || !holeData) return h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, '-');
-                              const stablefordPoints = calculateStableford(score, hole, player.playingHandicap);
-                              return h('div', {
-                                key: `pts-${hole}`,
-                                className: 'scorecard-score-cell'
-                              }, stablefordPoints);
-                            }),
-                            h('div', { className: 'scorecard-score-subtotal' },
-                              hasFront9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 1)
-                                .reduce((sum, hole) => {
-                                  const score = playerScores[hole];
-                                  if (!score || score === 'NR') return sum;
-                                  return sum + calculateStableford(score, hole, player.playingHandicap);
-                                }, 0)
-                            )
-                          )
-                        ),
-                        // Back 9
-                        h('div', { className: 'scorecard-section' },
-                          h('div', { className: 'scorecard-grid' },
-                            h('div', { className: 'scorecard-label' }, 'Hole'),
+                            h('div', { className: 'scorecard-subtotal-header' }, 'OUT'),
                             ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole =>
                               h('div', { key: `hole-${hole}`, className: 'scorecard-hole-number' }, hole)
                             ),
-                            h('div', { className: 'scorecard-subtotal-header' }, 'In')
+                            h('div', { className: 'scorecard-subtotal-header' }, 'IN'),
+                            h('div', { className: 'scorecard-subtotal-header' }, 'TOTAL')
                           ),
+                          // Par row
                           h('div', { className: 'scorecard-grid' },
                             h('div', { className: 'scorecard-par-label' }, 'Par'),
-                            ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
+                            ...Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
                               const holeData = courseHoles.find(h => h.hole === hole);
+                              if (hole === 9) {
+                                return [
+                                  h('div', { key: `par-${hole}`, className: 'scorecard-par-cell' }, holeData?.par || '-'),
+                                  h('div', { key: 'par-out', className: 'scorecard-par-subtotal' },
+                                    Array.from({ length: 9 }, (_, i) => i + 1)
+                                      .reduce((sum, h) => sum + (courseHoles.find(c => c.hole === h)?.par || 0), 0)
+                                  )
+                                ];
+                              } else if (hole === 18) {
+                                return [
+                                  h('div', { key: `par-${hole}`, className: 'scorecard-par-cell' }, holeData?.par || '-'),
+                                  h('div', { key: 'par-in', className: 'scorecard-par-subtotal' },
+                                    Array.from({ length: 9 }, (_, i) => i + 10)
+                                      .reduce((sum, h) => sum + (courseHoles.find(c => c.hole === h)?.par || 0), 0)
+                                  ),
+                                  h('div', { key: 'par-total', className: 'scorecard-par-subtotal' },
+                                    Array.from({ length: 18 }, (_, i) => i + 1)
+                                      .reduce((sum, h) => sum + (courseHoles.find(c => c.hole === h)?.par || 0), 0)
+                                  )
+                                ];
+                              }
                               return h('div', { key: `par-${hole}`, className: 'scorecard-par-cell' }, holeData?.par || '-');
-                            }),
-                            h('div', { className: 'scorecard-par-subtotal' },
-                              Array.from({ length: 9 }, (_, i) => i + 10)
-                                .reduce((sum, hole) => sum + (courseHoles.find(h => h.hole === hole)?.par || 0), 0)
-                            )
+                            }).flat(),
                           ),
+                          // Gross row - all 18 holes
                           h('div', { className: 'scorecard-grid' },
                             h('div', { className: 'scorecard-score-label' }, 'Gross'),
-                            ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
+                            ...Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
                               const holeData = courseHoles.find(h => h.hole === hole);
                               const score = playerScores[hole];
-                              return h('div', {
-                                key: `score-${hole}`,
-                                className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}`
-                              }, score || '-');
-                            }),
-                            h('div', { className: 'scorecard-score-subtotal' }, back9 || '-')
+                              if (hole === 9) {
+                                return [
+                                  h('div', { key: `gross-${hole}`, className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}` }, score || '-'),
+                                  h('div', { key: 'gross-out', className: 'scorecard-score-subtotal' }, front9 || '-')
+                                ];
+                              } else if (hole === 18) {
+                                return [
+                                  h('div', { key: `gross-${hole}`, className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}` }, score || '-'),
+                                  h('div', { key: 'gross-in', className: 'scorecard-score-subtotal' }, back9 || '-'),
+                                  h('div', { key: 'gross-total', className: 'scorecard-score-subtotal' }, player.grossTotal)
+                                ];
+                              }
+                              return h('div', { key: `gross-${hole}`, className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}` }, score || '-');
+                            }).flat()
                           ),
+                          // Net row - all 18 holes
                           h('div', { className: 'scorecard-grid' },
                             h('div', { className: 'scorecard-score-label' }, 'Net'),
-                            ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
+                            ...Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
                               const holeData = courseHoles.find(h => h.hole === hole);
                               const score = playerScores[hole];
-                              if (!score || score === 'NR' || !holeData) return h('div', { key: `net-${hole}`, className: 'scorecard-score-cell' }, '-');
-                              const strokesReceived = player.playingHandicap >= holeData.strokeIndex ?
-                                Math.floor(player.playingHandicap / 18) + 1 :
-                                Math.floor(player.playingHandicap / 18);
-                              const netScore = score - strokesReceived;
-                              return h('div', {
-                                key: `net-${hole}`,
-                                className: `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}`
-                              }, netScore);
-                            }),
-                            h('div', { className: 'scorecard-score-subtotal' },
-                              hasBack9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 10)
-                                .reduce((sum, hole) => {
-                                  const score = playerScores[hole];
-                                  const holeData = courseHoles.find(h => h.hole === hole);
-                                  if (!score || score === 'NR' || !holeData) return sum;
-                                  const strokesReceived = player.playingHandicap >= holeData.strokeIndex ?
-                                    Math.floor(player.playingHandicap / 18) + 1 :
-                                    Math.floor(player.playingHandicap / 18);
-                                  return sum + (score - strokesReceived);
-                                }, 0)
-                            )
+                              let netScore = '-';
+                              if (score && score !== 'NR' && holeData) {
+                                const strokesReceived = player.playingHandicap >= holeData.strokeIndex ?
+                                  Math.floor(player.playingHandicap / 18) + 1 :
+                                  Math.floor(player.playingHandicap / 18);
+                                netScore = score - strokesReceived;
+                              }
+                              if (hole === 9) {
+                                const netOut = hasFront9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 1).reduce((sum, h) => {
+                                  const s = playerScores[h];
+                                  const hd = courseHoles.find(c => c.hole === h);
+                                  if (!s || s === 'NR' || !hd) return sum;
+                                  const sr = player.playingHandicap >= hd.strokeIndex ? Math.floor(player.playingHandicap / 18) + 1 : Math.floor(player.playingHandicap / 18);
+                                  return sum + (s - sr);
+                                }, 0);
+                                return [
+                                  h('div', { key: `net-${hole}`, className: netScore === '-' ? 'scorecard-score-cell' : `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}` }, netScore),
+                                  h('div', { key: 'net-out', className: 'scorecard-score-subtotal' }, netOut)
+                                ];
+                              } else if (hole === 18) {
+                                const netIn = hasBack9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 10).reduce((sum, h) => {
+                                  const s = playerScores[h];
+                                  const hd = courseHoles.find(c => c.hole === h);
+                                  if (!s || s === 'NR' || !hd) return sum;
+                                  const sr = player.playingHandicap >= hd.strokeIndex ? Math.floor(player.playingHandicap / 18) + 1 : Math.floor(player.playingHandicap / 18);
+                                  return sum + (s - sr);
+                                }, 0);
+                                return [
+                                  h('div', { key: `net-${hole}`, className: netScore === '-' ? 'scorecard-score-cell' : `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}` }, netScore),
+                                  h('div', { key: 'net-in', className: 'scorecard-score-subtotal' }, netIn),
+                                  h('div', { key: 'net-total', className: 'scorecard-score-subtotal' }, player.netTotal)
+                                ];
+                              }
+                              return h('div', { key: `net-${hole}`, className: netScore === '-' ? 'scorecard-score-cell' : `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}` }, netScore);
+                            }).flat()
                           ),
+                          // Points row - all 18 holes
                           h('div', { className: 'scorecard-grid' },
                             h('div', { className: 'scorecard-score-label' }, 'Points'),
-                            ...Array.from({ length: 9 }, (_, i) => i + 10).map(hole => {
+                            ...Array.from({ length: 18 }, (_, i) => i + 1).map(hole => {
                               const holeData = courseHoles.find(h => h.hole === hole);
                               const score = playerScores[hole];
-                              if (!score || score === 'NR' || !holeData) return h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, '-');
-                              const stablefordPoints = calculateStableford(score, hole, player.playingHandicap);
-                              return h('div', {
-                                key: `pts-${hole}`,
-                                className: 'scorecard-score-cell'
-                              }, stablefordPoints);
-                            }),
-                            h('div', { className: 'scorecard-score-subtotal' },
-                              hasBack9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 10)
-                                .reduce((sum, hole) => {
-                                  const score = playerScores[hole];
-                                  if (!score || score === 'NR') return sum;
-                                  return sum + calculateStableford(score, hole, player.playingHandicap);
-                                }, 0)
-                            )
-                          )
-                        ),
+                              let points = '-';
+                              if (score && score !== 'NR' && holeData) {
+                                points = calculateStableford(score, hole, player.playingHandicap);
+                              }
+                              if (hole === 9) {
+                                const ptsOut = hasFront9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 1).reduce((sum, h) => {
+                                  const s = playerScores[h];
+                                  if (!s || s === 'NR') return sum;
+                                  return sum + calculateStableford(s, h, player.playingHandicap);
+                                }, 0);
+                                return [
+                                  h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, points),
+                                  h('div', { key: 'pts-out', className: 'scorecard-score-subtotal' }, ptsOut)
+                                ];
+                              } else if (hole === 18) {
+                                const ptsIn = hasBack9NR ? 'NR' : Array.from({ length: 9 }, (_, i) => i + 10).reduce((sum, h) => {
+                                  const s = playerScores[h];
+                                  if (!s || s === 'NR') return sum;
+                                  return sum + calculateStableford(s, h, player.playingHandicap);
+                                }, 0);
+                                return [
+                                  h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, points),
+                                  h('div', { key: 'pts-in', className: 'scorecard-score-subtotal' }, ptsIn),
+                                  h('div', { key: 'pts-total', className: 'scorecard-score-subtotal' }, player.stablefordTotal)
+                                ];
+                              }
+                              return h('div', { key: `pts-${hole}`, className: 'scorecard-score-cell' }, points);
+                            }).flat()
+                          ),
                         // Total
                         h('div', { className: 'scorecard-total' },
                           h('div', { className: 'scorecard-total-badge' },
