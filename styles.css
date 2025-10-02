@@ -60,6 +60,8 @@ h1, h2, h3, h4, h5, h6 {
   --color-medal-to: #f59e0b;
   --color-stableford-from: #10b981;
   --color-stableford-to: #059669;
+  --color-gross-from: #3b82f6;
+  --color-gross-to: #1d4ed8;
 
   /* Score Colors */
   --color-eagle: #fef3c7;
@@ -91,6 +93,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .winner-stableford {
   background: linear-gradient(135deg, var(--color-stableford-from) 0%, var(--color-stableford-to) 100%);
+}
+
+.winner-gross {
+  background: linear-gradient(135deg, var(--color-gross-from) 0%, var(--color-gross-to) 100%);
 }
 
 /* Leaderboard Table */

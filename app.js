@@ -130,6 +130,7 @@ function LegsOpenTournament() {
   const [selectedTee, setSelectedTee] = useState(null);
   const [searchingCourses, setSearchingCourses] = useState(false);
   const [expandedLeaderboardRows, setExpandedLeaderboardRows] = useState([]);
+  const [leaderboardSortBy, setLeaderboardSortBy] = useState('net'); // 'net', 'gross', 'stableford'
 
   useEffect(() => {
     loadData();
@@ -771,8 +772,8 @@ function LegsOpenTournament() {
     return Math.max(0, 2 + (holeData.par - netScore));
   };
 
-  const calculateResults = () => {
-    if (!currentTournament) return { results: [], medalWinner: null, stablefordWinner: null };
+  const calculateResults = (sortBy = 'net') => {
+    if (!currentTournament) return { results: [], medalWinner: null, stablefordWinner: null, grossWinner: null };
     const results = tournamentPlayers.map(player => {
       const playerScores = scores[player.id] || {};
       const grossTotal = Object.values(playerScores).reduce((sum, s) => sum + s, 0);
@@ -784,10 +785,27 @@ function LegsOpenTournament() {
       }
       return { ...player, grossTotal, netTotal, stablefordTotal, playingHandicap };
     }).filter(p => p.grossTotal > 0);
-    results.sort((a, b) => a.netTotal - b.netTotal);
-    const medalWinner = results[0];
-    const stablefordWinner = results.filter(p => p.id !== medalWinner?.id).sort((a, b) => b.stablefordTotal - a.stablefordTotal)[0];
-    return { results, medalWinner, stablefordWinner };
+
+    // Sort based on selected criteria
+    if (sortBy === 'gross') {
+      results.sort((a, b) => a.grossTotal - b.grossTotal);
+    } else if (sortBy === 'stableford') {
+      results.sort((a, b) => b.stablefordTotal - a.stablefordTotal);
+    } else {
+      results.sort((a, b) => a.netTotal - b.netTotal);
+    }
+
+    // Determine winners (always based on net and stableford)
+    const sortedByNet = [...results].sort((a, b) => a.netTotal - b.netTotal);
+    const medalWinner = sortedByNet[0];
+
+    const sortedByStableford = [...results].sort((a, b) => b.stablefordTotal - a.stablefordTotal);
+    const stablefordWinner = sortedByStableford.find(p => p.id !== medalWinner?.id);
+
+    const sortedByGross = [...results].sort((a, b) => a.grossTotal - b.grossTotal);
+    const grossWinner = sortedByGross.find(p => p.id !== medalWinner?.id && p.id !== stablefordWinner?.id);
+
+    return { results, medalWinner, stablefordWinner, grossWinner };
   };
 
   const getTotalPar = () => courseHoles.reduce((sum, h) => sum + h.par, 0);
@@ -1611,10 +1629,26 @@ function LegsOpenTournament() {
     if (!currentTournament) {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
     }
-    const { results, medalWinner, stablefordWinner } = calculateResults();
+    const { results, medalWinner, stablefordWinner, grossWinner } = calculateResults(leaderboardSortBy);
 
     return h('div', { className: 'space-y-6' },
-      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Leaderboard'),
+      h('div', { className: 'flex justify-between items-center mb-4' },
+        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Leaderboard'),
+        h('div', { className: 'flex gap-2' },
+          h('button', {
+            onClick: () => setLeaderboardSortBy('net'),
+            className: `px-4 py-2 rounded font-semibold ${leaderboardSortBy === 'net' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
+          }, 'Sort by Net'),
+          h('button', {
+            onClick: () => setLeaderboardSortBy('gross'),
+            className: `px-4 py-2 rounded font-semibold ${leaderboardSortBy === 'gross' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
+          }, 'Sort by Gross'),
+          h('button', {
+            onClick: () => setLeaderboardSortBy('stableford'),
+            className: `px-4 py-2 rounded font-semibold ${leaderboardSortBy === 'stableford' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
+          }, 'Sort by Stableford')
+        )
+      ),
 
       medalWinner && h('div', { className: 'winner-medal p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
@@ -1632,6 +1666,15 @@ function LegsOpenTournament() {
         ),
         h('p', { className: 'text-3xl font-bold' }, stablefordWinner.name),
         h('p', { className: 'text-xl' }, `Points: ${stablefordWinner.stablefordTotal}`)
+      ),
+
+      grossWinner && h('div', { className: 'winner-gross p-6 rounded-lg classic-shadow text-white' },
+        h('div', { className: 'flex items-center gap-3 mb-2' },
+          h(Icons.Award, { size: 32 }),
+          h('h3', { className: 'text-2xl font-bold' }, 'Gross Winner')
+        ),
+        h('p', { className: 'text-3xl font-bold' }, grossWinner.name),
+        h('p', { className: 'text-xl' }, `Gross Score: ${grossWinner.grossTotal}`)
       ),
 
       results.length === 0 ? h('div', { className: 'bg-white p-8 rounded-lg classic-shadow text-center text-gray-500' },
