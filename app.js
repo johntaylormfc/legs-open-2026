@@ -965,6 +965,18 @@ function LegsOpenTournament() {
         }
       }
 
+      // Calculate current hole (last hole with a score + 1, or completed)
+      let currentHole = 0;
+      let holesCompleted = 0;
+      for (let hole = 1; hole <= 18; hole++) {
+        if (playerScores[hole]) {
+          currentHole = hole;
+          holesCompleted++;
+        }
+      }
+      const isIncomplete = holesCompleted > 0 && holesCompleted < 18;
+      const nextHole = holesCompleted === 18 ? 'Finished' : (currentHole + 1);
+
       return {
         ...player,
         grossTotal: grossTotalDisplay,
@@ -974,7 +986,10 @@ function LegsOpenTournament() {
         back9Gross: hasNR ? 'NR' : back9Gross,
         back9Net,
         back9Stableford,
-        hasNR
+        hasNR,
+        currentHole: nextHole,
+        holesCompleted,
+        isIncomplete
       };
     }).filter(p => p.stablefordTotal > 0 || p.grossTotal !== 'NR');
 
@@ -2106,7 +2121,8 @@ function LegsOpenTournament() {
                     },
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'stableford' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
                   }, 'Stableford ▼')
-                )
+                ),
+                h('th', { className: 'p-3 text-center' }, 'Current Hole')
               )
             ),
             h('tbody', null,
@@ -2133,7 +2149,7 @@ function LegsOpenTournament() {
                   // Main row
                   h('tr', {
                     key: player.id,
-                    className: 'leaderboard-row',
+                    className: `leaderboard-row ${player.isIncomplete ? 'bg-yellow-50 border-l-4 border-yellow-500' : ''}`,
                     onClick: () => toggleLeaderboardRow(player.id)
                   },
                     h('td', { className: 'p-3 text-center' },
@@ -2145,14 +2161,23 @@ function LegsOpenTournament() {
                     h('td', { className: 'p-3 text-center' }, player.playingHandicap),
                     h('td', { className: 'p-3 text-center' }, player.grossTotal),
                     h('td', { className: 'p-3 text-center font-bold' }, player.netTotal),
-                    h('td', { className: 'p-3 text-center' }, player.stablefordTotal)
+                    h('td', { className: 'p-3 text-center' }, player.stablefordTotal),
+                    h('td', { className: 'p-3 text-center' },
+                      player.isIncomplete ?
+                        h('span', { className: 'px-2 py-1 bg-yellow-500 text-white rounded text-sm font-bold' },
+                          `Hole ${player.currentHole}`
+                        ) :
+                        h('span', { className: 'px-2 py-1 bg-green-600 text-white rounded text-sm font-bold' },
+                          player.currentHole === 'Finished' ? '✓ Complete' : player.currentHole
+                        )
+                    )
                   ),
                   // Expanded scorecard row
                   isExpanded && h('tr', {
                     key: `${player.id}-expanded`,
                     className: 'leaderboard-expanded-row'
                   },
-                    h('td', { colSpan: 8, className: 'scorecard-container' },
+                    h('td', { colSpan: 9, className: 'scorecard-container' },
                       h('div', { className: 'space-y-2' },
                         h('h4', { className: 'scorecard-title' }, 'Scorecard'),
                         // Front 9
