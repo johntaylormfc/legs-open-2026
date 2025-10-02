@@ -975,7 +975,7 @@ function LegsOpenTournament() {
         }
       }
       const isIncomplete = holesCompleted > 0 && holesCompleted < 18;
-      const nextHole = holesCompleted === 18 ? 'Finished' : (currentHole + 1);
+      const displayHole = holesCompleted === 18 ? 'Finished' : holesCompleted;
 
       // Calculate par for completed holes and net score for completed holes
       let parForCompletedHoles = 0;
@@ -1025,7 +1025,7 @@ function LegsOpenTournament() {
         back9Net,
         back9Stableford,
         hasNR,
-        currentHole: nextHole,
+        currentHole: displayHole,
         holesCompleted,
         isIncomplete
       };
@@ -2229,7 +2229,10 @@ function LegsOpenTournament() {
                   // Main row
                   h('tr', {
                     key: player.id,
-                    className: `leaderboard-row ${player.isIncomplete ? 'bg-yellow-50 border-l-4 border-yellow-500' : ''}`,
+                    className: 'leaderboard-row',
+                    style: {
+                      backgroundColor: '#ffba00'
+                    },
                     onClick: () => toggleLeaderboardRow(player.id)
                   },
                     h('td', { className: 'p-3 text-center' },
@@ -2238,18 +2241,36 @@ function LegsOpenTournament() {
                     h('td', { className: 'p-3 font-bold' }, index + 1),
                     h('td', { className: 'p-3' }, player.formattedName),
                     h('td', { className: 'p-3 text-center' },
-                      player.netToPar === 'NR' ? 'NR' :
-                      player.netToPar === 0 ? 'E' :
-                      player.netToPar > 0 ? `+${player.netToPar}` : player.netToPar
+                      player.netToPar === 'NR' ?
+                        h('span', null, 'NR') :
+                        h('span', {
+                          style: {
+                            color: player.netToPar === 0 ? '#ffffff' : player.netToPar < 0 ? '#E4002B' : '#08325A',
+                            backgroundColor: player.netToPar === 0 ? '#375623' : '#ffffff',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            display: 'inline-block',
+                            fontWeight: 'bold'
+                          }
+                        }, player.netToPar === 0 ? 'E' : player.netToPar > 0 ? `+${player.netToPar}` : player.netToPar)
                     ),
                     h('td', { className: 'p-3 text-center font-bold' },
                       player.holesCompleted === 18 ? player.netTotal : '-'
                     ),
                     h('td', { className: 'p-3 text-center' }, player.stablefordTotal),
                     h('td', { className: 'p-3 text-center' },
-                      player.grossToPar === 'NR' ? 'NR' :
-                      player.grossToPar === 0 ? 'E' :
-                      player.grossToPar > 0 ? `+${player.grossToPar}` : player.grossToPar
+                      player.grossToPar === 'NR' ?
+                        h('span', null, 'NR') :
+                        h('span', {
+                          style: {
+                            color: player.grossToPar === 0 ? '#ffffff' : player.grossToPar < 0 ? '#E4002B' : '#08325A',
+                            backgroundColor: player.grossToPar === 0 ? '#375623' : '#ffffff',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            display: 'inline-block',
+                            fontWeight: 'bold'
+                          }
+                        }, player.grossToPar === 0 ? 'E' : player.grossToPar > 0 ? `+${player.grossToPar}` : player.grossToPar)
                     ),
                     h('td', { className: 'p-3 text-center' },
                       player.holesCompleted === 18 ? player.grossTotal : '-'
