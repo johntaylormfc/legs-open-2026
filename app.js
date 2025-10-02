@@ -2638,15 +2638,15 @@ function LegsOpenTournament() {
                             }).flat()
                           ),
                           // Total
-                        h('div', { className: 'scorecard-total' },
-                          h('div', { className: 'scorecard-total-badge' },
-                            `Total: ${player.grossTotal}`
+                          h('div', { className: 'scorecard-total' },
+                            h('div', { className: 'scorecard-total-badge' },
+                              `Total: ${player.grossTotal}`
+                            )
                           )
                         )
                       )
                     )
                   )
-                ];
               }).flat()
             )
           )
