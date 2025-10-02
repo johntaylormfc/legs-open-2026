@@ -2647,6 +2647,7 @@ function LegsOpenTournament() {
                       )
                     )
                   )
+                ];
               }).flat()
             )
           )
