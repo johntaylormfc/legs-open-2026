@@ -2433,16 +2433,18 @@ function LegsOpenTournament() {
                 const front9Scores = Array.from({ length: 9 }, (_, i) => i + 1)
                   .map(hole => playerScores[hole]);
                 const hasFront9NR = front9Scores.some(s => s === 'NR');
-                const front9 = hasFront9NR ? 'NR' : front9Scores
+                const hasFront9Scores = front9Scores.some(s => s && s !== 'NR');
+                const front9 = hasFront9NR ? 'NR' : hasFront9Scores ? front9Scores
                   .filter(s => s && s !== 'NR')
-                  .reduce((sum, s) => sum + s, 0);
+                  .reduce((sum, s) => sum + s, 0) : '-';
 
                 const back9Scores = Array.from({ length: 9 }, (_, i) => i + 10)
                   .map(hole => playerScores[hole]);
                 const hasBack9NR = back9Scores.some(s => s === 'NR');
-                const back9 = hasBack9NR ? 'NR' : back9Scores
+                const hasBack9Scores = back9Scores.some(s => s && s !== 'NR');
+                const back9 = hasBack9NR ? 'NR' : hasBack9Scores ? back9Scores
                   .filter(s => s && s !== 'NR')
-                  .reduce((sum, s) => sum + s, 0);
+                  .reduce((sum, s) => sum + s, 0) : '-';
 
                 // Calculate par for front 9, back 9, and total
                 const front9Par = Array.from({ length: 9 }, (_, i) => i + 1)
@@ -2579,7 +2581,7 @@ function LegsOpenTournament() {
                                 return [
                                   h('div', { key: `gross-${hole}`, className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}` }, score || '-'),
                                   h('div', { key: 'gross-in', className: 'scorecard-score-subtotal', style: getSubtotalStyle(back9, back9Par) }, back9 || '-'),
-                                  h('div', { key: 'gross-total', className: 'scorecard-score-subtotal', style: getSubtotalStyle(player.grossTotal, totalPar) }, player.grossTotal)
+                                  h('div', { key: 'gross-total', className: 'scorecard-score-subtotal', style: getSubtotalStyle(player.grossTotal, totalPar) }, player.grossTotal || '-')
                                 ];
                               }
                               return h('div', { key: `gross-${hole}`, className: `scorecard-score-cell ${score && holeData ? getScoreColorClass(score, holeData.par) : 'score-par'}` }, score || '-');
@@ -2621,7 +2623,7 @@ function LegsOpenTournament() {
                                 return [
                                   h('div', { key: `net-${hole}`, className: netScore === '-' ? 'scorecard-score-cell' : `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}` }, netScore),
                                   h('div', { key: 'net-in', className: 'scorecard-score-subtotal', style: getSubtotalStyle(netIn, back9Par) }, netIn),
-                                  h('div', { key: 'net-total', className: 'scorecard-score-subtotal', style: getSubtotalStyle(player.netTotal, totalPar) }, player.netTotal)
+                                  h('div', { key: 'net-total', className: 'scorecard-score-subtotal', style: getSubtotalStyle(player.netTotal, totalPar) }, player.netTotal || '-')
                                 ];
                               }
                               return h('div', { key: `net-${hole}`, className: netScore === '-' ? 'scorecard-score-cell' : `scorecard-score-cell ${getScoreColorClass(netScore, holeData.par)}` }, netScore);
