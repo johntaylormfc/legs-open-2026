@@ -2672,6 +2672,19 @@ function LegsOpenTournament() {
     );
   };
 
+  const renderScoringManualTab = () => {
+    return h('div', { className: 'space-y-6' },
+      h('div', { className: 'bg-white p-8 rounded-lg classic-shadow' },
+        h('iframe', {
+          src: 'scoring-manual.html',
+          className: 'w-full border-0',
+          style: { minHeight: '800px', height: 'calc(100vh - 200px)' },
+          title: 'Score Entry Guide'
+        })
+      )
+    );
+  };
+
   const renderChangelogTab = () => {
     const changelog = [
       {
@@ -2975,9 +2988,22 @@ function LegsOpenTournament() {
         h('div', { className: 'max-w-7xl mx-auto px-4' },
           h('div', { className: 'flex justify-center gap-1 overflow-x-auto' },
             (() => {
-              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history', 'manual', 'changelog'];
-              const groupTabs = ['leaderboard', 'scoring'];
+              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history', 'admin-manual', 'changelog'];
+              const groupTabs = ['leaderboard', 'scoring', 'scoring-manual'];
               const visibleTabs = userRole === 'admin' ? allTabs : groupTabs;
+
+              const tabLabels = {
+                'leaderboard': 'Leaderboard',
+                'tournaments': 'Tournaments',
+                'course': 'Course',
+                'setup': 'Setup',
+                'scoring': 'Scoring',
+                'players': 'Players',
+                'history': 'History',
+                'admin-manual': 'Admin Manual',
+                'scoring-manual': 'Scoring Manual',
+                'changelog': 'Changelog'
+              };
 
               return visibleTabs.map(tab =>
                 h('button', {
@@ -2986,7 +3012,7 @@ function LegsOpenTournament() {
                   className: `px-6 py-4 font-semibold uppercase text-sm tracking-wider transition-all whitespace-nowrap ${
                     activeTab === tab ? 'bg-white text-green-800 border-b-4 border-yellow-500' : 'text-white hover:bg-white/20'
                   }`
-                }, tab)
+                }, tabLabels[tab] || tab)
               );
             })()
           )
@@ -3001,7 +3027,8 @@ function LegsOpenTournament() {
       activeTab === 'scoring' && renderScoringTab(),
       activeTab === 'players' && renderPlayersTab(),
       activeTab === 'history' && renderHistoryTab(),
-      activeTab === 'manual' && renderManualTab(),
+      activeTab === 'admin-manual' && renderManualTab(),
+      activeTab === 'scoring-manual' && renderScoringManualTab(),
       activeTab === 'changelog' && renderChangelogTab()
     )
   );
