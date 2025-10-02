@@ -991,6 +991,9 @@ function LegsOpenTournament() {
       // Calculate net to par (net score - par for completed holes)
       const netToPar = hasNR ? 'NR' : (netTotal - parForCompletedHoles);
 
+      // Calculate gross to par (gross score - par for completed holes)
+      const grossToPar = hasNR ? 'NR' : (grossTotal - parForCompletedHoles);
+
       // Format player name as SURNAME, I.
       const nameParts = player.name.split(' ');
       let formattedName = player.name;
@@ -1004,6 +1007,7 @@ function LegsOpenTournament() {
         ...player,
         formattedName,
         grossTotal: grossTotalDisplay,
+        grossToPar,
         netTotal,
         netToPar,
         stablefordTotal,
@@ -2121,7 +2125,7 @@ function LegsOpenTournament() {
                 h('th', { className: 'p-3 text-left' }, ''),
                 h('th', { className: 'p-3 text-left' }, 'Position'),
                 h('th', { className: 'p-3 text-left' }, 'Player'),
-                h('th', { className: 'p-3 text-center' }, 'PAR'),
+                h('th', { className: 'p-3 text-center' }, 'NET PAR'),
                 h('th', { className: 'p-3 text-center' },
                   h('button', {
                     onClick: (e) => {
@@ -2129,7 +2133,7 @@ function LegsOpenTournament() {
                       setLeaderboardSortBy('net');
                     },
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'net' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
-                  }, 'Score ▼')
+                  }, 'NET SCORE ▼')
                 ),
                 h('th', { className: 'p-3 text-center' },
                   h('button', {
@@ -2138,8 +2142,9 @@ function LegsOpenTournament() {
                       setLeaderboardSortBy('stableford');
                     },
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'stableford' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
-                  }, 'Points ▼')
+                  }, 'POINTS ▼')
                 ),
+                h('th', { className: 'p-3 text-center' }, 'GROSS PAR'),
                 h('th', { className: 'p-3 text-center' },
                   h('button', {
                     onClick: (e) => {
@@ -2147,7 +2152,7 @@ function LegsOpenTournament() {
                       setLeaderboardSortBy('gross');
                     },
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'gross' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
-                  }, 'Gross ▼')
+                  }, 'GROSS SCORE ▼')
                 ),
                 h('th', { className: 'p-3 text-center' }, 'Hole')
               )
@@ -2184,10 +2189,23 @@ function LegsOpenTournament() {
                     ),
                     h('td', { className: 'p-3 font-bold' }, index + 1),
                     h('td', { className: 'p-3' }, player.formattedName),
-                    h('td', { className: 'p-3 text-center' }, player.netToPar > 0 ? `+${player.netToPar}` : player.netToPar),
-                    h('td', { className: 'p-3 text-center font-bold' }, player.netTotal),
+                    h('td', { className: 'p-3 text-center' },
+                      player.netToPar === 'NR' ? 'NR' :
+                      player.netToPar === 0 ? 'E' :
+                      player.netToPar > 0 ? `+${player.netToPar}` : player.netToPar
+                    ),
+                    h('td', { className: 'p-3 text-center font-bold' },
+                      player.holesCompleted === 18 ? player.netTotal : '-'
+                    ),
                     h('td', { className: 'p-3 text-center' }, player.stablefordTotal),
-                    h('td', { className: 'p-3 text-center' }, player.grossTotal),
+                    h('td', { className: 'p-3 text-center' },
+                      player.grossToPar === 'NR' ? 'NR' :
+                      player.grossToPar === 0 ? 'E' :
+                      player.grossToPar > 0 ? `+${player.grossToPar}` : player.grossToPar
+                    ),
+                    h('td', { className: 'p-3 text-center' },
+                      player.holesCompleted === 18 ? player.grossTotal : '-'
+                    ),
                     h('td', { className: 'p-3 text-center' },
                       player.isIncomplete ?
                         h('span', { className: 'px-2 py-1 bg-yellow-500 text-white rounded text-sm font-bold' },
@@ -2203,7 +2221,7 @@ function LegsOpenTournament() {
                     key: `${player.id}-expanded`,
                     className: 'leaderboard-expanded-row'
                   },
-                    h('td', { colSpan: 8, className: 'scorecard-container' },
+                    h('td', { colSpan: 10, className: 'scorecard-container' },
                       h('div', { className: 'space-y-2' },
                         h('h4', { className: 'scorecard-title' }, 'Scorecard'),
                         // Front 9
