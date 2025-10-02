@@ -2499,15 +2499,15 @@ function LegsOpenTournament() {
                           }
                         }, player.grossToPar === 0 ? 'E' : player.grossToPar > 0 ? `+${player.grossToPar}` : player.grossToPar)
                     ),
-                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#FFD162', color: '#000000' } },
+                    h('td', { className: 'p-3 text-center font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } },
                       player.holesCompleted === 18 ? player.grossTotal : '-'
                     ),
-                    h('td', { className: 'p-3 text-center', style: { backgroundColor: '#FFD162', color: '#000000' } },
+                    h('td', { className: 'p-3 text-center', style: { backgroundColor: '#ffd162', color: '#06051e' } },
                       player.isIncomplete ?
-                        h('span', { className: 'px-2 py-1 rounded text-sm font-bold', style: { backgroundColor: '#FFD162', color: '#000000' } },
+                        h('span', { className: 'px-2 py-1 rounded text-sm font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } },
                           player.currentHole
                         ) :
-                        h('span', { className: 'px-2 py-1 rounded text-sm font-bold', style: { backgroundColor: '#FFD162', color: '#000000' } },
+                        h('span', { className: 'px-2 py-1 rounded text-sm font-bold', style: { backgroundColor: '#ffd162', color: '#06051e' } },
                           '18'
                         )
                     )
