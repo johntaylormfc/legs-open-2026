@@ -136,11 +136,50 @@ function LegsOpenTournament() {
   const [uploadingAppLogo, setUploadingAppLogo] = useState(false);
   const [uploadingTournamentLogo, setUploadingTournamentLogo] = useState(false);
 
+  // Appearance Settings
+  const [appearanceSettings, setAppearanceSettings] = useState({
+    colorPrimary: '#06051E',
+    colorPrimaryLight: '#ffba00',
+    colorText: '#ffffff',
+    colorLeaderboardHeader: '#06051E',
+    colorLeaderboardExpanded: '#ffba00',
+    colorScorecardTotalBg: '#06051E',
+    colorScorecardParBg: '#ffba00'
+  });
+
   useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []); // Run only once on mount
+
+  // Load appearance settings from localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('appearanceSettings');
+    if (savedSettings) {
+      try {
+        setAppearanceSettings(JSON.parse(savedSettings));
+      } catch (e) {
+        console.error('Failed to load appearance settings', e);
+      }
+    }
+  }, []);
+
+  // Apply appearance settings to CSS variables
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--color-primary', appearanceSettings.colorPrimary);
+    root.style.setProperty('--color-primary-light', appearanceSettings.colorPrimaryLight);
+    root.style.setProperty('--color-primary-dark', appearanceSettings.colorPrimary);
+    root.style.setProperty('--color-text', appearanceSettings.colorText);
+    root.style.setProperty('--color-leaderboard-header', appearanceSettings.colorLeaderboardHeader);
+    root.style.setProperty('--color-leaderboard-expanded', appearanceSettings.colorLeaderboardExpanded);
+    root.style.setProperty('--color-scorecard-total-bg', appearanceSettings.colorScorecardTotalBg);
+    root.style.setProperty('--color-scorecard-par-bg', appearanceSettings.colorScorecardParBg);
+    root.style.setProperty('--color-scorecard-score-bg', appearanceSettings.colorScorecardParBg);
+    root.style.setProperty('--color-scorecard-subtotal-bg', appearanceSettings.colorScorecardParBg);
+    root.style.setProperty('--color-scorecard-hole-header', appearanceSettings.colorPrimary);
+  }, [appearanceSettings]);
 
   // Reload data when authentication state changes
   useEffect(() => {
@@ -1698,6 +1737,168 @@ function LegsOpenTournament() {
     );
   };
 
+  const renderAppearanceTab = () => {
+    const handleColorChange = (key, value) => {
+      const newSettings = { ...appearanceSettings, [key]: value };
+      setAppearanceSettings(newSettings);
+      localStorage.setItem('appearanceSettings', JSON.stringify(newSettings));
+    };
+
+    const resetToDefaults = () => {
+      const defaults = {
+        colorPrimary: '#06051E',
+        colorPrimaryLight: '#ffba00',
+        colorText: '#ffffff',
+        colorLeaderboardHeader: '#06051E',
+        colorLeaderboardExpanded: '#ffba00',
+        colorScorecardTotalBg: '#06051E',
+        colorScorecardParBg: '#ffba00'
+      };
+      setAppearanceSettings(defaults);
+      localStorage.setItem('appearanceSettings', JSON.stringify(defaults));
+    };
+
+    return h('div', { className: 'space-y-6' },
+      h('div', { className: 'flex justify-between items-center mb-6' },
+        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Appearance Settings'),
+        h('button', {
+          onClick: resetToDefaults,
+          className: 'bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors'
+        }, 'Reset to Defaults')
+      ),
+
+      h('div', { className: 'bg-white rounded-lg classic-shadow p-6 space-y-6' },
+        h('h3', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Primary Colors'),
+
+        // Primary Color
+        h('div', { className: 'flex items-center justify-between py-3 border-b' },
+          h('div', null,
+            h('label', { className: 'font-semibold text-gray-700' }, 'Primary Color'),
+            h('p', { className: 'text-sm text-gray-500' }, 'Main background and header color')
+          ),
+          h('input', {
+            type: 'color',
+            value: appearanceSettings.colorPrimary,
+            onChange: (e) => handleColorChange('colorPrimary', e.target.value),
+            className: 'w-16 h-10 rounded cursor-pointer'
+          })
+        ),
+
+        // Primary Light Color
+        h('div', { className: 'flex items-center justify-between py-3 border-b' },
+          h('div', null,
+            h('label', { className: 'font-semibold text-gray-700' }, 'Accent Color'),
+            h('p', { className: 'text-sm text-gray-500' }, 'Buttons and highlights')
+          ),
+          h('input', {
+            type: 'color',
+            value: appearanceSettings.colorPrimaryLight,
+            onChange: (e) => handleColorChange('colorPrimaryLight', e.target.value),
+            className: 'w-16 h-10 rounded cursor-pointer'
+          })
+        ),
+
+        // Text Color
+        h('div', { className: 'flex items-center justify-between py-3 border-b' },
+          h('div', null,
+            h('label', { className: 'font-semibold text-gray-700' }, 'Text Color'),
+            h('p', { className: 'text-sm text-gray-500' }, 'Main text color on dark backgrounds')
+          ),
+          h('input', {
+            type: 'color',
+            value: appearanceSettings.colorText,
+            onChange: (e) => handleColorChange('colorText', e.target.value),
+            className: 'w-16 h-10 rounded cursor-pointer'
+          })
+        )
+      ),
+
+      h('div', { className: 'bg-white rounded-lg classic-shadow p-6 space-y-6' },
+        h('h3', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Leaderboard Colors'),
+
+        // Leaderboard Header
+        h('div', { className: 'flex items-center justify-between py-3 border-b' },
+          h('div', null,
+            h('label', { className: 'font-semibold text-gray-700' }, 'Leaderboard Header'),
+            h('p', { className: 'text-sm text-gray-500' }, 'Header background color')
+          ),
+          h('input', {
+            type: 'color',
+            value: appearanceSettings.colorLeaderboardHeader,
+            onChange: (e) => handleColorChange('colorLeaderboardHeader', e.target.value),
+            className: 'w-16 h-10 rounded cursor-pointer'
+          })
+        ),
+
+        // Leaderboard Rows
+        h('div', { className: 'flex items-center justify-between py-3 border-b' },
+          h('div', null,
+            h('label', { className: 'font-semibold text-gray-700' }, 'Leaderboard Rows'),
+            h('p', { className: 'text-sm text-gray-500' }, 'Row background color')
+          ),
+          h('input', {
+            type: 'color',
+            value: appearanceSettings.colorLeaderboardExpanded,
+            onChange: (e) => handleColorChange('colorLeaderboardExpanded', e.target.value),
+            className: 'w-16 h-10 rounded cursor-pointer'
+          })
+        )
+      ),
+
+      h('div', { className: 'bg-white rounded-lg classic-shadow p-6 space-y-6' },
+        h('h3', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Scorecard Colors'),
+
+        // Scorecard Total Background
+        h('div', { className: 'flex items-center justify-between py-3 border-b' },
+          h('div', null,
+            h('label', { className: 'font-semibold text-gray-700' }, 'Scorecard Total Background'),
+            h('p', { className: 'text-sm text-gray-500' }, 'Total score badge background')
+          ),
+          h('input', {
+            type: 'color',
+            value: appearanceSettings.colorScorecardTotalBg,
+            onChange: (e) => handleColorChange('colorScorecardTotalBg', e.target.value),
+            className: 'w-16 h-10 rounded cursor-pointer'
+          })
+        ),
+
+        // Scorecard Par Background
+        h('div', { className: 'flex items-center justify-between py-3 border-b' },
+          h('div', null,
+            h('label', { className: 'font-semibold text-gray-700' }, 'Scorecard Par/Score Background'),
+            h('p', { className: 'text-sm text-gray-500' }, 'Par and score row backgrounds')
+          ),
+          h('input', {
+            type: 'color',
+            value: appearanceSettings.colorScorecardParBg,
+            onChange: (e) => handleColorChange('colorScorecardParBg', e.target.value),
+            className: 'w-16 h-10 rounded cursor-pointer'
+          })
+        )
+      ),
+
+      // Preview Section
+      h('div', { className: 'bg-white rounded-lg classic-shadow p-6' },
+        h('h3', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Preview'),
+        h('div', {
+          className: 'p-6 rounded-lg',
+          style: { backgroundColor: appearanceSettings.colorPrimary, color: appearanceSettings.colorText }
+        },
+          h('h4', { className: 'text-2xl font-bold mb-2' }, 'Sample Header'),
+          h('p', { className: 'mb-4' }, 'This is how your text will look on the primary background.'),
+          h('button', {
+            className: 'px-4 py-2 rounded font-semibold',
+            style: { backgroundColor: appearanceSettings.colorPrimaryLight, color: '#000000' }
+          }, 'Sample Button'),
+          h('div', {
+            className: 'mt-4 p-4 rounded',
+            style: { backgroundColor: appearanceSettings.colorLeaderboardExpanded }
+          }, 'Sample Leaderboard Row')
+        )
+      )
+    );
+  };
+
   const renderSetupTab = () => {
     if (!currentTournament) {
       return h('div', { className: 'text-center text-gray-600 text-xl py-12' }, 'Select a tournament first');
@@ -3200,7 +3401,7 @@ function LegsOpenTournament() {
         h('div', { className: 'max-w-7xl mx-auto px-4' },
           h('div', { className: 'flex justify-center gap-1 overflow-x-auto' },
             (() => {
-              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history', 'admin-manual', 'changelog'];
+              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history', 'appearance', 'admin-manual', 'changelog'];
               const groupTabs = ['leaderboard', 'scoring', 'scoring-manual'];
               const visibleTabs = userRole === 'admin' ? allTabs : groupTabs;
 
@@ -3212,6 +3413,7 @@ function LegsOpenTournament() {
                 'scoring': 'Scoring',
                 'players': 'Players',
                 'history': 'History',
+                'appearance': 'Appearance',
                 'admin-manual': 'Admin Manual',
                 'scoring-manual': 'Scoring Manual',
                 'changelog': 'Changelog'
@@ -3239,6 +3441,7 @@ function LegsOpenTournament() {
       activeTab === 'scoring' && renderScoringTab(),
       activeTab === 'players' && renderPlayersTab(),
       activeTab === 'history' && renderHistoryTab(),
+      activeTab === 'appearance' && renderAppearanceTab(),
       activeTab === 'admin-manual' && renderManualTab(),
       activeTab === 'scoring-manual' && renderScoringManualTab(),
       activeTab === 'changelog' && renderChangelogTab()
