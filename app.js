@@ -2634,6 +2634,205 @@ function LegsOpenTournament() {
     );
   };
 
+  const renderChangelogTab = () => {
+    const changelog = [
+      {
+        version: '2.4.0',
+        date: '2025-01-10',
+        changes: [
+          'Added NR (No Return) functionality - players can mark holes as not completed',
+          'NR scores show "NR" for Gross/Net totals but still calculate Stableford points',
+          'Improved scoring interface with Front 9 and Back 9 sections',
+          'Added NR display styling with orange badges'
+        ]
+      },
+      {
+        version: '2.3.0',
+        date: '2025-01-10',
+        changes: [
+          'Added logo upload feature for app-wide and tournament-specific logos',
+          'Logos display in header (app logo left, tournament logo right)',
+          'Maximum file size 2MB with image validation',
+          'Logos stored as base64 in database'
+        ]
+      },
+      {
+        version: '2.2.0',
+        date: '2025-01-09',
+        changes: [
+          'Changed default opening tab to Leaderboard',
+          'Tournaments tab moved to second position',
+          'Added "Show/Hide Completed" tournaments toggle',
+          'Completed tournaments now hidden by default'
+        ]
+      },
+      {
+        version: '2.1.0',
+        date: '2025-01-08',
+        changes: [
+          'Added Gross Winner banner to leaderboard',
+          'Implemented sortable leaderboard columns (Gross, Net, Stableford)',
+          'Added proper tie-breaking rules using back 9 scores',
+          'Enhanced leaderboard with expandable scorecard view'
+        ]
+      },
+      {
+        version: '2.0.0',
+        date: '2025-01-07',
+        changes: [
+          'Extracted inline styles to CSS classes and variables',
+          'Created comprehensive styling guide (STYLING_GUIDE.md)',
+          'Added CSS custom properties for easy theme customization',
+          'Improved maintainability and consistency across UI'
+        ]
+      },
+      {
+        version: '1.9.0',
+        date: '2025-01-06',
+        changes: [
+          'Added expandable accordion rows on leaderboard',
+          'Hole-by-hole scorecard with color-coded scores',
+          'Front 9, Back 9, and total score display',
+          'Eagle, birdie, par, bogey color indicators'
+        ]
+      },
+      {
+        version: '1.8.0',
+        date: '2025-01-05',
+        changes: [
+          'Fixed tournament selection persistence across tabs',
+          'Active tournament now takes priority over localStorage',
+          'Improved state management for current tournament',
+          'Fixed duplicate player addition bug'
+        ]
+      },
+      {
+        version: '1.7.0',
+        date: '2025-01-04',
+        changes: [
+          'Added tournament deletion feature',
+          'Confirmation dialog before deletion',
+          'Cascading delete for related data',
+          'Admin-only access to delete function'
+        ]
+      },
+      {
+        version: '1.6.0',
+        date: '2025-01-03',
+        changes: [
+          'Implemented manual group creation',
+          'Drag-and-drop player assignment',
+          'Custom group names and tee times',
+          'Alternative to random group generation'
+        ]
+      },
+      {
+        version: '1.5.0',
+        date: '2025-01-02',
+        changes: [
+          'Added player tournament history view',
+          'Historical scores and rankings display',
+          'Integrated CDH number tracking',
+          'Player biography support'
+        ]
+      },
+      {
+        version: '1.4.0',
+        date: '2025-01-01',
+        changes: [
+          'Implemented PIN-based authentication',
+          'Admin PIN (1991) for full access',
+          'Group-specific PINs for scoring',
+          'Role-based UI rendering'
+        ]
+      },
+      {
+        version: '1.3.0',
+        date: '2024-12-30',
+        changes: [
+          'Added live scoring functionality',
+          'Group-based score entry',
+          'Real-time leaderboard updates',
+          'Stableford points calculation'
+        ]
+      },
+      {
+        version: '1.2.0',
+        date: '2024-12-29',
+        changes: [
+          'Course data integration with API',
+          'Automatic tee selection',
+          'Slope and course rating import',
+          'Hole-by-hole par and stroke index'
+        ]
+      },
+      {
+        version: '1.1.0',
+        date: '2024-12-28',
+        changes: [
+          'Player management system',
+          'Handicap tracking',
+          'Tournament player assignment',
+          'Random group generation'
+        ]
+      },
+      {
+        version: '1.0.0',
+        date: '2024-12-27',
+        changes: [
+          'Initial release',
+          'Tournament creation and management',
+          'Basic course setup',
+          'Supabase integration'
+        ]
+      }
+    ];
+
+    return h('div', { className: 'space-y-6' },
+      h('div', { className: 'flex items-center gap-3 mb-4' },
+        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Changelog'),
+        h('span', { className: 'px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold' },
+          `v${changelog[0].version}`
+        )
+      ),
+      h('p', { className: 'text-gray-600 mb-6' },
+        'Track all updates, improvements, and new features added to The Legs Open Championship Series.'
+      ),
+      h('div', { className: 'space-y-4' },
+        changelog.map(entry =>
+          h('div', {
+            key: entry.version,
+            className: 'bg-white p-6 rounded-lg classic-shadow'
+          },
+            h('div', { className: 'flex items-center justify-between mb-3' },
+              h('div', { className: 'flex items-center gap-3' },
+                h('span', { className: 'text-2xl font-bold text-green-800' }, `v${entry.version}`),
+                h('span', { className: 'px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm font-semibold' },
+                  new Date(entry.date).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })
+                )
+              )
+            ),
+            h('ul', { className: 'space-y-2' },
+              entry.changes.map((change, idx) =>
+                h('li', {
+                  key: idx,
+                  className: 'flex items-start gap-2 text-gray-700'
+                },
+                  h('span', { className: 'text-green-600 mt-1' }, '•'),
+                  h('span', null, change)
+                )
+              )
+            )
+          )
+        )
+      )
+    );
+  };
+
   // PIN Entry Screen
   if (!isAuthenticated) {
     return h('div', { className: 'min-h-screen hero-pattern flex items-center justify-center p-4' },
@@ -2738,7 +2937,7 @@ function LegsOpenTournament() {
         h('div', { className: 'max-w-7xl mx-auto px-4' },
           h('div', { className: 'flex justify-center gap-1 overflow-x-auto' },
             (() => {
-              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history'];
+              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history', 'changelog'];
               const groupTabs = ['leaderboard', 'scoring'];
               const visibleTabs = userRole === 'admin' ? allTabs : groupTabs;
 
@@ -2763,7 +2962,8 @@ function LegsOpenTournament() {
       activeTab === 'setup' && renderSetupTab(),
       activeTab === 'scoring' && renderScoringTab(),
       activeTab === 'players' && renderPlayersTab(),
-      activeTab === 'history' && renderHistoryTab()
+      activeTab === 'history' && renderHistoryTab(),
+      activeTab === 'changelog' && renderChangelogTab()
     )
   );
 }
