@@ -2659,6 +2659,19 @@ function LegsOpenTournament() {
     );
   };
 
+  const renderManualTab = () => {
+    return h('div', { className: 'space-y-6' },
+      h('div', { className: 'bg-white p-8 rounded-lg classic-shadow' },
+        h('iframe', {
+          src: 'admin-guide.html',
+          className: 'w-full border-0',
+          style: { minHeight: '800px', height: 'calc(100vh - 200px)' },
+          title: 'Admin User Guide'
+        })
+      )
+    );
+  };
+
   const renderChangelogTab = () => {
     const changelog = [
       {
@@ -2962,7 +2975,7 @@ function LegsOpenTournament() {
         h('div', { className: 'max-w-7xl mx-auto px-4' },
           h('div', { className: 'flex justify-center gap-1 overflow-x-auto' },
             (() => {
-              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history', 'changelog'];
+              const allTabs = ['leaderboard', 'tournaments', 'course', 'setup', 'scoring', 'players', 'history', 'manual', 'changelog'];
               const groupTabs = ['leaderboard', 'scoring'];
               const visibleTabs = userRole === 'admin' ? allTabs : groupTabs;
 
@@ -2988,6 +3001,7 @@ function LegsOpenTournament() {
       activeTab === 'scoring' && renderScoringTab(),
       activeTab === 'players' && renderPlayersTab(),
       activeTab === 'history' && renderHistoryTab(),
+      activeTab === 'manual' && renderManualTab(),
       activeTab === 'changelog' && renderChangelogTab()
     )
   );
