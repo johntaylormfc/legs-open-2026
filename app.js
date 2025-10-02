@@ -131,7 +131,7 @@ function LegsOpenTournament() {
   const [selectedTee, setSelectedTee] = useState(null);
   const [searchingCourses, setSearchingCourses] = useState(false);
   const [expandedLeaderboardRows, setExpandedLeaderboardRows] = useState([]);
-  const [leaderboardSortBy, setLeaderboardSortBy] = useState('net'); // 'net', 'gross', 'stableford'
+  const [leaderboardSortBy, setLeaderboardSortBy] = useState('netPar'); // 'netPar', 'net', 'grossPar', 'gross', 'stableford'
   const [appLogo, setAppLogo] = useState('');
   const [uploadingAppLogo, setUploadingAppLogo] = useState(false);
   const [uploadingTournamentLogo, setUploadingTournamentLogo] = useState(false);
@@ -977,19 +977,28 @@ function LegsOpenTournament() {
       const isIncomplete = holesCompleted > 0 && holesCompleted < 18;
       const nextHole = holesCompleted === 18 ? 'Finished' : (currentHole + 1);
 
-      // Calculate par for completed holes
+      // Calculate par for completed holes and net score for completed holes
       let parForCompletedHoles = 0;
+      let netScoreForCompletedHoles = 0;
       for (let hole = 1; hole <= 18; hole++) {
         if (playerScores[hole]) {
           const holeData = courseHoles.find(h => h.hole === hole);
           if (holeData) {
             parForCompletedHoles += holeData.par;
+            const score = playerScores[hole];
+            if (score && score !== 'NR') {
+              // Calculate strokes received for this hole
+              const strokesReceived = playingHandicap >= holeData.strokeIndex ?
+                Math.floor(playingHandicap / 18) + 1 :
+                Math.floor(playingHandicap / 18);
+              netScoreForCompletedHoles += (score - strokesReceived);
+            }
           }
         }
       }
 
-      // Calculate net to par (net score - par for completed holes)
-      const netToPar = hasNR ? 'NR' : (netTotal - parForCompletedHoles);
+      // Calculate net to par (net score for completed holes - par for completed holes)
+      const netToPar = hasNR ? 'NR' : (netScoreForCompletedHoles - parForCompletedHoles);
 
       // Calculate gross to par (gross score - par for completed holes)
       const grossToPar = hasNR ? 'NR' : (grossTotal - parForCompletedHoles);
@@ -1034,6 +1043,17 @@ function LegsOpenTournament() {
         // Tie-breaker: back 9 gross (lower is better)
         return a.back9Gross - b.back9Gross;
       });
+    } else if (sortBy === 'grossPar') {
+      results.sort((a, b) => {
+        // NR always goes to bottom
+        if (a.grossToPar === 'NR' && b.grossToPar !== 'NR') return 1;
+        if (b.grossToPar === 'NR' && a.grossToPar !== 'NR') return -1;
+        if (a.grossToPar === 'NR' && b.grossToPar === 'NR') return 0;
+        // Compare gross to par (lower is better)
+        if (a.grossToPar !== b.grossToPar) return a.grossToPar - b.grossToPar;
+        // Tie-breaker: back 9 gross (lower is better)
+        return a.back9Gross - b.back9Gross;
+      });
     } else if (sortBy === 'stableford') {
       results.sort((a, b) => {
         // First compare stableford totals
@@ -1041,7 +1061,19 @@ function LegsOpenTournament() {
         // Tie-breaker: back 9 stableford (higher is better)
         return b.back9Stableford - a.back9Stableford;
       });
+    } else if (sortBy === 'netPar') {
+      results.sort((a, b) => {
+        // NR always goes to bottom
+        if (a.netToPar === 'NR' && b.netToPar !== 'NR') return 1;
+        if (b.netToPar === 'NR' && a.netToPar !== 'NR') return -1;
+        if (a.netToPar === 'NR' && b.netToPar === 'NR') return 0;
+        // Compare net to par (lower is better)
+        if (a.netToPar !== b.netToPar) return a.netToPar - b.netToPar;
+        // Tie-breaker: back 9 net (lower is better)
+        return a.back9Net - b.back9Net;
+      });
     } else {
+      // Default sort by net score
       results.sort((a, b) => {
         // NR always goes to bottom
         if (a.netTotal === 'NR' && b.netTotal !== 'NR') return 1;
@@ -2125,7 +2157,15 @@ function LegsOpenTournament() {
                 h('th', { className: 'p-3 text-left' }, ''),
                 h('th', { className: 'p-3 text-left' }, 'Position'),
                 h('th', { className: 'p-3 text-left' }, 'Player'),
-                h('th', { className: 'p-3 text-center' }, 'NET PAR'),
+                h('th', { className: 'p-3 text-center' },
+                  h('button', {
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      setLeaderboardSortBy('netPar');
+                    },
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'netPar' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                  }, 'NET PAR ▼')
+                ),
                 h('th', { className: 'p-3 text-center' },
                   h('button', {
                     onClick: (e) => {
@@ -2144,7 +2184,15 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'stableford' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
                   }, 'POINTS ▼')
                 ),
-                h('th', { className: 'p-3 text-center' }, 'GROSS PAR'),
+                h('th', { className: 'p-3 text-center' },
+                  h('button', {
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      setLeaderboardSortBy('grossPar');
+                    },
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'grossPar' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                  }, 'GROSS PAR ▼')
+                ),
                 h('th', { className: 'p-3 text-center' },
                   h('button', {
                     onClick: (e) => {
