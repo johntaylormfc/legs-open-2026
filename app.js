@@ -2125,7 +2125,7 @@ function LegsOpenTournament() {
                     className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'stableford' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
                   }, 'Stableford ▼')
                 ),
-                h('th', { className: 'p-3 text-center' }, 'Current Hole')
+                h('th', { className: 'p-3 text-center' }, 'Hole')
               )
             ),
             h('tbody', null,
@@ -2168,7 +2168,7 @@ function LegsOpenTournament() {
                     h('td', { className: 'p-3 text-center' },
                       player.isIncomplete ?
                         h('span', { className: 'px-2 py-1 bg-yellow-500 text-white rounded text-sm font-bold' },
-                          `Hole ${player.currentHole}`
+                          player.currentHole
                         ) :
                         h('span', { className: 'px-2 py-1 bg-green-600 text-white rounded text-sm font-bold' },
                           player.currentHole === 'Finished' ? '✓ Complete' : player.currentHole
