@@ -1152,7 +1152,7 @@ function LegsOpenTournament() {
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-green-600 text-white';
+      case 'active': return 'bg-primary-light text-white';
       case 'completed': return 'bg-gray-600 text-white';
       case 'upcoming': return 'bg-blue-600 text-white';
       default: return 'bg-gray-400 text-white';
@@ -1222,7 +1222,7 @@ function LegsOpenTournament() {
 
     return h('div', { className: 'space-y-6' },
       h('div', { className: 'flex justify-between items-center' },
-        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Tournaments'),
+        h('h2', { className: 'text-3xl font-bold text-primary' }, 'Tournaments'),
         h('div', { className: 'flex gap-3' },
           h('button', {
             onClick: () => setShowCompletedTournaments(!showCompletedTournaments),
@@ -1230,12 +1230,12 @@ function LegsOpenTournament() {
           }, showCompletedTournaments ? 'Hide Completed' : 'Show Completed'),
           h('button', {
             onClick: () => setShowCreateTournament(true),
-            className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
+            className: 'bg-primary text-white px-6 py-3 rounded-lg hover:bg-opacity-80 flex items-center gap-2 font-semibold'
           }, h(Icons.Plus, { size: 20 }), 'Create Tournament')
         )
       ),
       showCreateTournament && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'New Tournament'),
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary' }, 'New Tournament'),
         
         // Tournament Name and Year
         h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4 mb-4' },
@@ -1291,7 +1291,7 @@ function LegsOpenTournament() {
         
         // Course Search Section
         h('div', { className: 'mb-4' },
-          h('h4', { className: 'font-semibold mb-2 text-green-800' }, 'Search for Course'),
+          h('h4', { className: 'font-semibold mb-2 text-primary' }, 'Search for Course'),
           h('div', { className: 'flex gap-2' },
             h('input', {
               type: 'text',
@@ -1311,12 +1311,12 @@ function LegsOpenTournament() {
         
         // Search Results
         searchResults.length > 0 && h('div', { className: 'mb-4 border border-gray-300 rounded-lg p-4 max-h-60 overflow-y-auto' },
-          h('h4', { className: 'font-semibold mb-2 text-green-800' }, 'Search Results'),
+          h('h4', { className: 'font-semibold mb-2 text-primary' }, 'Search Results'),
           h('div', { className: 'space-y-2' },
             searchResults.map(course => h('div', {
               key: course.id,
               onClick: () => selectCourse(course),
-              className: 'p-3 border border-gray-200 rounded hover:bg-green-50 cursor-pointer'
+              className: 'p-3 border border-gray-200 rounded hover:bg-primary-light bg-opacity-10 cursor-pointer'
             },
               h('p', { className: 'font-semibold' }, course.club_name),
               course.course_name !== course.club_name && h('p', { className: 'text-sm text-gray-500' }, course.course_name),
@@ -1328,10 +1328,10 @@ function LegsOpenTournament() {
         ),
         
         // Selected Course
-        selectedCourse && h('div', { className: 'mb-4 p-4 bg-green-50 border border-green-200 rounded-lg' },
+        selectedCourse && h('div', { className: 'mb-4 p-4 bg-primary-light bg-opacity-10 border border-primary-light border-opacity-30 rounded-lg' },
           h('div', { className: 'flex justify-between items-start' },
             h('div', null,
-              h('h4', { className: 'font-semibold text-green-800' }, 'Selected Course'),
+              h('h4', { className: 'font-semibold text-primary' }, 'Selected Course'),
               h('p', { className: 'font-bold' }, selectedCourse.club_name),
               selectedCourse.course_name !== selectedCourse.club_name && h('p', { className: 'text-sm text-gray-500' }, selectedCourse.course_name),
               h('p', { className: 'text-sm text-gray-600' }, 
@@ -1351,13 +1351,13 @@ function LegsOpenTournament() {
         
         // Available Tees
         availableTees.length > 0 && h('div', { className: 'mb-4' },
-          h('h4', { className: 'font-semibold mb-2 text-green-800' }, 'Select Tees'),
+          h('h4', { className: 'font-semibold mb-2 text-primary' }, 'Select Tees'),
           h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-3' },
             availableTees.map((tee, index) => h('div', {
               key: index,
               onClick: () => selectTee(tee),
               className: `p-4 border-2 rounded-lg cursor-pointer ${
-                selectedTee === tee ? 'border-green-600 bg-green-50' : 'border-gray-300 hover:border-green-400'
+                selectedTee === tee ? 'border-primary bg-primary-light bg-opacity-10' : 'border-gray-300 hover:border-primary-light border-opacity-50'
               }`
             },
               h('p', { className: 'font-bold' }, tee.name),
@@ -1370,7 +1370,7 @@ function LegsOpenTournament() {
         
         // Manual Entry (fallback)
         !selectedCourse && h('div', { className: 'mb-4' },
-          h('h4', { className: 'font-semibold mb-2 text-green-800' }, 'Or Enter Manually'),
+          h('h4', { className: 'font-semibold mb-2 text-primary' }, 'Or Enter Manually'),
           h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4' },
             h('input', {
               type: 'text',
@@ -1402,7 +1402,7 @@ function LegsOpenTournament() {
           h('button', {
             onClick: createTournament,
             disabled: !newTournament.name || !newTournament.course_name,
-            className: 'bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 font-semibold disabled:bg-gray-400'
+            className: 'bg-primary text-white px-6 py-2 rounded-lg hover:bg-opacity-80 font-semibold disabled:bg-gray-400'
           }, 'Create Tournament'),
           h('button', {
             onClick: () => {
@@ -1425,10 +1425,10 @@ function LegsOpenTournament() {
             setCurrentTournament(t);
             loadData();
           },
-          className: `bg-white p-6 rounded-lg classic-shadow hover-lift cursor-pointer ${currentTournament?.id === t.id ? 'ring-4 ring-green-500' : ''}`
+          className: `bg-white p-6 rounded-lg classic-shadow hover-lift cursor-pointer ${currentTournament?.id === t.id ? 'ring-4 ring-primary-light' : ''}`
         },
           h('div', { className: 'flex justify-between items-start mb-2' },
-            h('h3', { className: 'text-xl font-bold text-green-800' }, t.name),
+            h('h3', { className: 'text-xl font-bold text-primary' }, t.name),
             h('span', { className: `px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(t.status || 'upcoming')}` },
               getStatusLabel(t.status || 'upcoming')
             )
@@ -1442,8 +1442,8 @@ function LegsOpenTournament() {
                 ? `Starts: ${new Date(t.start_date).toLocaleDateString()}`
                 : `Ends: ${new Date(t.end_date).toLocaleDateString()}`
           ),
-          t.is_active && h('div', { className: 'mt-3 pt-3 border-t border-green-200' },
-            h('p', { className: 'text-green-700 font-semibold text-sm flex items-center gap-1' },
+          t.is_active && h('div', { className: 'mt-3 pt-3 border-t border-primary-light border-opacity-30' },
+            h('p', { className: 'text-primary font-semibold text-sm flex items-center gap-1' },
               h(Icons.Trophy, { size: 16 }),
               'Active Tournament'
             )
@@ -1454,7 +1454,7 @@ function LegsOpenTournament() {
                 e.stopPropagation();
                 setTournamentActive(t.id);
               },
-              className: 'flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-semibold'
+              className: 'flex-1 bg-primary-light text-white px-4 py-2 rounded hover:bg-primary text-sm font-semibold'
             }, 'Set as Active'),
             userRole === 'admin' && h('button', {
               onClick: (e) => {
@@ -1472,7 +1472,7 @@ function LegsOpenTournament() {
 
       // App Logo Upload Section (at bottom)
       h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800 flex items-center gap-2' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary flex items-center gap-2' },
           h(Icons.Trophy, { size: 24 }),
           'App Logo'
         ),
@@ -1514,7 +1514,7 @@ function LegsOpenTournament() {
     }
     return h('div', { className: 'space-y-6' },
       h('div', { className: 'flex justify-between items-center' },
-        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Tournament & Course Details'),
+        h('h2', { className: 'text-3xl font-bold text-primary' }, 'Tournament & Course Details'),
         h('div', { className: 'flex gap-2' },
           h('button', {
             onClick: () => setEditingTournament(!editingTournament),
@@ -1522,14 +1522,14 @@ function LegsOpenTournament() {
           }, h(Icons.Edit, { size: 20 }), editingTournament ? 'Cancel' : 'Edit Tournament'),
           h('button', {
             onClick: () => setEditingCourse(!editingCourse),
-            className: 'bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 flex items-center gap-2 font-semibold'
+            className: 'bg-primary text-white px-6 py-3 rounded-lg hover:bg-opacity-80 flex items-center gap-2 font-semibold'
           }, h(Icons.Edit, { size: 20 }), editingCourse ? 'Cancel' : 'Edit Course')
         )
       ),
 
       // Tournament Details Section
       h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800 flex items-center gap-2' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary flex items-center gap-2' },
           h(Icons.Trophy, { size: 24 }),
           'Tournament Details'
         ),
@@ -1604,7 +1604,7 @@ function LegsOpenTournament() {
                 ? `Starts: ${new Date(currentTournament.start_date).toLocaleDateString()}`
                 : `Ends: ${new Date(currentTournament.end_date).toLocaleDateString()}`
           ),
-          currentTournament.is_active && h('p', { className: 'text-green-700 font-semibold mt-2 flex items-center gap-1' },
+          currentTournament.is_active && h('p', { className: 'text-primary font-semibold mt-2 flex items-center gap-1' },
             h(Icons.Trophy, { size: 16 }),
             'Active Tournament'
           )
@@ -1637,7 +1637,7 @@ function LegsOpenTournament() {
           ),
           h('button', {
             onClick: updateCourseDetails,
-            className: 'bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 font-semibold'
+            className: 'bg-primary text-white px-6 py-2 rounded-lg hover:bg-opacity-80 font-semibold'
           }, 'Save Details')
         ) : h('div', null,
           h('h3', { className: 'text-2xl font-bold mb-2' }, currentTournament.course_name || 'Course Name Not Set'),
@@ -1647,11 +1647,11 @@ function LegsOpenTournament() {
         )
       ),
       h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Hole Details'),
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary' }, 'Hole Details'),
         h('div', { className: 'overflow-x-auto' },
           h('table', { className: 'w-full' },
             h('thead', null,
-              h('tr', { className: 'border-b-2 border-green-700' },
+              h('tr', { className: 'border-b-2 border-primary' },
                 h('th', { className: 'p-2 text-left' }, 'Hole'),
                 h('th', { className: 'p-2 text-center' }, 'Par'),
                 h('th', { className: 'p-2 text-center' }, 'Stroke Index')
@@ -1695,7 +1695,7 @@ function LegsOpenTournament() {
 
       // Tournament Logo Upload Section (at bottom)
       h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800 flex items-center gap-2' },
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary flex items-center gap-2' },
           h(Icons.Trophy, { size: 24 }),
           'Tournament Logo'
         ),
@@ -1760,7 +1760,7 @@ function LegsOpenTournament() {
 
     return h('div', { className: 'space-y-6' },
       h('div', { className: 'flex justify-between items-center mb-6' },
-        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Appearance Settings'),
+        h('h2', { className: 'text-3xl font-bold text-primary' }, 'Appearance Settings'),
         h('button', {
           onClick: resetToDefaults,
           className: 'bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors'
@@ -1906,9 +1906,9 @@ function LegsOpenTournament() {
     const availablePlayers = allPlayers.filter(p => !tournamentPlayers.find(tp => tp.id === p.id));
     
     return h('div', { className: 'space-y-6' },
-      h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Tournament Setup'),
+      h('h2', { className: 'text-3xl font-bold text-primary' }, 'Tournament Setup'),
       h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Add New Player'),
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary' }, 'Add New Player'),
         h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4' },
           h('input', {
             type: 'text',
@@ -1935,11 +1935,11 @@ function LegsOpenTournament() {
         ),
         h('button', {
           onClick: createNewPlayer,
-          className: 'mt-4 bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 font-semibold'
+          className: 'mt-4 bg-primary text-white px-6 py-2 rounded-lg hover:bg-opacity-80 font-semibold'
         }, 'Add Player')
       ),
       h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Tournament Players'),
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary' }, 'Tournament Players'),
         tournamentPlayers.length === 0 ? h('p', { className: 'text-gray-500 text-center py-4' }, 'No players added yet') :
         h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
           tournamentPlayers.map(p => h('div', {
@@ -1952,7 +1952,7 @@ function LegsOpenTournament() {
         )
       ),
       availablePlayers.length > 0 && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Add Existing Players'),
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary' }, 'Add Existing Players'),
         h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
           availablePlayers.map(p => h('div', {
             key: p.id,
@@ -1967,13 +1967,13 @@ function LegsOpenTournament() {
                 e.stopPropagation();
                 addPlayerToTournament(p.id);
               },
-              className: 'bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800'
+              className: 'bg-primary text-white px-4 py-2 rounded hover:bg-opacity-80'
             }, 'Add')
           ))
         )
       ),
       tournamentPlayers.length >= 4 && !manualGroupMode && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
-        h('h3', { className: 'text-xl font-bold mb-4 text-green-800' }, 'Create Groups'),
+        h('h3', { className: 'text-xl font-bold mb-4 text-primary' }, 'Create Groups'),
         h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
           h('button', {
             onClick: generateGroups,
@@ -1998,11 +1998,11 @@ function LegsOpenTournament() {
       // Manual Group Creation UI
       manualGroupMode && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
         h('div', { className: 'flex justify-between items-center mb-6' },
-          h('h3', { className: 'text-2xl font-bold text-green-800' }, 'Manual Group Creation'),
+          h('h3', { className: 'text-2xl font-bold text-primary' }, 'Manual Group Creation'),
           h('div', { className: 'flex gap-2' },
             h('button', {
               onClick: addManualGroup,
-              className: 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold flex items-center gap-2'
+              className: 'bg-primary-light text-white px-4 py-2 rounded-lg hover:bg-primary font-semibold flex items-center gap-2'
             },
               h(Icons.Plus, { size: 16 }),
               'Add Group'
@@ -2025,7 +2025,7 @@ function LegsOpenTournament() {
                       draggable: true,
                       onDragStart: () => setDraggedPlayer(player),
                       onDragEnd: () => setDraggedPlayer(null),
-                      className: 'bg-white border-2 border-gray-300 p-3 rounded cursor-move hover:border-green-500 hover:shadow-md transition-all'
+                      className: 'bg-white border-2 border-gray-300 p-3 rounded cursor-move hover:border-primary-light hover:shadow-md transition-all'
                     },
                       h('p', { className: 'font-semibold text-sm' }, player.name),
                       h('p', { className: 'text-xs text-gray-500' }, `HCP: ${player.handicap}`)
@@ -2089,7 +2089,7 @@ function LegsOpenTournament() {
                           const player = allPlayers.find(p => p.id === playerId);
                           return h('div', {
                             key: playerId,
-                            className: 'bg-green-100 border border-green-300 px-3 py-1 rounded-full flex items-center gap-2'
+                            className: 'bg-primary-light bg-opacity-20 border border-primary-light border-opacity-40 px-3 py-1 rounded-full flex items-center gap-2'
                           },
                             h('span', { className: 'text-sm font-semibold' }, player?.name),
                             h('button', {
@@ -2110,7 +2110,7 @@ function LegsOpenTournament() {
         h('div', { className: 'flex gap-4' },
           h('button', {
             onClick: saveManualGroups,
-            className: 'flex-1 bg-green-700 text-white px-6 py-4 rounded-lg hover:bg-green-800 font-bold text-lg'
+            className: 'flex-1 bg-primary text-white px-6 py-4 rounded-lg hover:bg-opacity-80 font-bold text-lg'
           }, 'Save Groups & Start Tournament'),
           h('button', {
             onClick: cancelManualGroupCreation,
@@ -2135,7 +2135,7 @@ function LegsOpenTournament() {
       : groups.filter(g => g.id === userGroupId);
 
     return h('div', { className: 'space-y-6' },
-      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Live Scoring'),
+      h('h2', { className: 'text-3xl font-bold text-primary mb-4' }, 'Live Scoring'),
       h('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6' },
         visibleGroups.map(group => h('div', {
           key: group.id,
@@ -2143,7 +2143,7 @@ function LegsOpenTournament() {
         },
           h('button', {
             onClick: () => setSelectedGroup(group),
-            className: `w-full p-4 rounded-lg font-bold ${selectedGroup?.id === group.id ? 'bg-green-700 text-white' : 'bg-white text-green-800'} classic-shadow hover-lift text-left`
+            className: `w-full p-4 rounded-lg font-bold ${selectedGroup?.id === group.id ? 'bg-primary text-white' : 'bg-white text-primary'} classic-shadow hover-lift text-left`
           },
             h('div', null,
               h('p', { className: 'font-bold' }, group.name || `Group ${group.group_number}`),
@@ -2157,7 +2157,7 @@ function LegsOpenTournament() {
       ),
       selectedGroup && h('div', { className: 'bg-white p-6 rounded-lg classic-shadow' },
         h('div', { className: 'flex justify-between items-center mb-4' },
-          h('h3', { className: 'text-xl font-bold text-green-800' }, `Group ${selectedGroup.group_number}`),
+          h('h3', { className: 'text-xl font-bold text-primary' }, `Group ${selectedGroup.group_number}`),
           userRole === 'admin' && h('p', { className: 'text-sm font-mono font-bold text-blue-700' },
             `Group PIN: ${selectedGroup.pin}`
           )
@@ -2318,7 +2318,7 @@ function LegsOpenTournament() {
     const allScoresComplete = results.length > 0 && results.every(player => player.holesCompleted === 18);
 
     return h('div', { className: 'space-y-6' },
-      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Leaderboard'),
+      h('h2', { className: 'text-3xl font-bold text-primary mb-4' }, 'Leaderboard'),
 
       allScoresComplete && medalWinner && h('div', { className: 'winner-medal p-6 rounded-lg classic-shadow text-white' },
         h('div', { className: 'flex items-center gap-3 mb-2' },
@@ -2364,7 +2364,7 @@ function LegsOpenTournament() {
                       e.stopPropagation();
                       setLeaderboardSortBy('netPar');
                     },
-                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'netPar' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'netPar' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'NET PAR ▼')
                 ),
                 h('th', { className: 'p-3 text-center' },
@@ -2373,7 +2373,7 @@ function LegsOpenTournament() {
                       e.stopPropagation();
                       setLeaderboardSortBy('net');
                     },
-                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'net' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'net' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'NET SCORE ▼')
                 ),
                 h('th', { className: 'p-3 text-center' },
@@ -2382,7 +2382,7 @@ function LegsOpenTournament() {
                       e.stopPropagation();
                       setLeaderboardSortBy('stableford');
                     },
-                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'stableford' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'stableford' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'POINTS ▼')
                 ),
                 h('th', { className: 'p-3 text-center' },
@@ -2391,7 +2391,7 @@ function LegsOpenTournament() {
                       e.stopPropagation();
                       setLeaderboardSortBy('grossPar');
                     },
-                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'grossPar' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'grossPar' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'GROSS PAR ▼')
                 ),
                 h('th', { className: 'p-3 text-center' },
@@ -2400,7 +2400,7 @@ function LegsOpenTournament() {
                       e.stopPropagation();
                       setLeaderboardSortBy('gross');
                     },
-                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'gross' ? 'bg-white text-green-700' : 'hover:bg-green-600'}`
+                    className: `px-2 py-1 rounded text-sm font-semibold transition-colors ${leaderboardSortBy === 'gross' ? 'bg-white text-primary' : 'hover:bg-primary-light'}`
                   }, 'GROSS SCORE ▼')
                 ),
                 h('th', { className: 'p-3 text-center' }, 'Hole')
@@ -2482,7 +2482,7 @@ function LegsOpenTournament() {
                         h('span', { className: 'px-2 py-1 bg-yellow-500 text-white rounded text-sm font-bold' },
                           player.currentHole
                         ) :
-                        h('span', { className: 'px-2 py-1 bg-green-600 text-white rounded text-sm font-bold' },
+                        h('span', { className: 'px-2 py-1 bg-primary-light text-white rounded text-sm font-bold' },
                           player.currentHole === 'Finished' ? '✓ Complete' : player.currentHole
                         )
                     )
@@ -2679,7 +2679,7 @@ function LegsOpenTournament() {
 
   const renderPlayersTab = () => {
     return h('div', { className: 'space-y-6' },
-      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Player Profiles'),
+      h('h2', { className: 'text-3xl font-bold text-primary mb-4' }, 'Player Profiles'),
       allPlayers.length === 0 ? h('div', { className: 'text-center text-gray-500 text-xl py-12' }, 'No players yet. Go to Setup to add players.') :
       h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
         allPlayers.map(player => h('div', {
@@ -2694,7 +2694,7 @@ function LegsOpenTournament() {
           }) : h('div', {
             className: 'w-24 h-24 rounded-full mx-auto mb-4 bg-gray-200 flex items-center justify-center'
           }, h('span', { className: 'text-3xl text-gray-400' }, player.name.charAt(0))),
-          h('h3', { className: 'text-xl font-bold text-center text-green-800' }, player.name),
+          h('h3', { className: 'text-xl font-bold text-center text-primary' }, player.name),
           h('p', { className: 'text-center text-gray-600' }, `Handicap: ${player.handicap}`),
           player.cdh_number && h('p', { className: 'text-center text-gray-500 text-sm' }, `CDH: ${player.cdh_number}`),
           player.bio && h('p', { className: 'text-center text-gray-600 text-sm mt-2 line-clamp-2' }, player.bio)
@@ -2796,7 +2796,7 @@ function LegsOpenTournament() {
             onClick: (e) => e.stopPropagation()
           },
             h('div', { className: 'flex justify-between items-start mb-6' },
-              h('h3', { className: 'text-3xl font-bold text-green-800' }, selectedPlayer.name),
+              h('h3', { className: 'text-3xl font-bold text-primary' }, selectedPlayer.name),
               h('button', {
                 onClick: () => setSelectedPlayer(null),
                 className: 'text-gray-500 hover:text-gray-700 text-3xl leading-none'
@@ -2842,7 +2842,7 @@ function LegsOpenTournament() {
                 h('div', { className: 'grid grid-cols-2 gap-4' },
                   h('div', null,
                     h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'Handicap'),
-                    h('p', { className: 'text-2xl font-bold text-green-800' }, selectedPlayer.handicap)
+                    h('p', { className: 'text-2xl font-bold text-primary' }, selectedPlayer.handicap)
                   ),
                   h('div', null,
                     h('label', { className: 'block text-sm font-semibold text-gray-700 mb-1' }, 'CDH Number'),
@@ -2863,7 +2863,7 @@ function LegsOpenTournament() {
             
             // Tournament History Section
             h('div', { className: 'mb-6' },
-              h('h4', { className: 'text-2xl font-bold text-green-800 mb-4 flex items-center gap-2' },
+              h('h4', { className: 'text-2xl font-bold text-primary mb-4 flex items-center gap-2' },
                 h(Icons.Trophy, { size: 24 }),
                 'Tournament History'
               ),
@@ -2876,7 +2876,7 @@ function LegsOpenTournament() {
                       className: 'border border-gray-300 rounded-lg p-4 hover:bg-gray-50'
                     },
                       h('div', { className: 'mb-2' },
-                        h('h5', { className: 'font-bold text-lg text-green-800' }, tournament.name),
+                        h('h5', { className: 'font-bold text-lg text-primary' }, tournament.name),
                         h('p', { className: 'text-sm text-gray-600' }, `${tournament.year} - ${tournament.course_name}`),
                         position > 0 && h('p', { className: 'text-sm font-semibold text-blue-700 mt-1' },
                           `Finished ${getOrdinal(position)} of ${totalPlayers} players`
@@ -2889,7 +2889,7 @@ function LegsOpenTournament() {
                         ),
                         h('div', { className: 'text-center' },
                           h('p', { className: 'text-xs text-gray-500' }, 'Net Score'),
-                          h('p', { className: 'text-lg font-bold text-green-700' }, netTotal)
+                          h('p', { className: 'text-lg font-bold text-primary' }, netTotal)
                         ),
                         h('div', { className: 'text-center' },
                           h('p', { className: 'text-xs text-gray-500' }, 'Stableford'),
@@ -2898,7 +2898,7 @@ function LegsOpenTournament() {
                       ),
                       hasScores && h('button', {
                         onClick: () => setViewingScorecard({ tournament, playerScores, player: selectedPlayer }),
-                        className: 'mt-3 w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold flex items-center justify-center gap-2'
+                        className: 'mt-3 w-full bg-primary-light text-white px-4 py-2 rounded-lg hover:bg-primary font-semibold flex items-center justify-center gap-2'
                       },
                         h(Icons.Edit, { size: 16 }),
                         'View Scorecard'
@@ -2916,7 +2916,7 @@ function LegsOpenTournament() {
                   updatePlayerBio(selectedPlayer);
                   setSelectedPlayer(null);
                 },
-                className: 'flex-1 bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 font-semibold'
+                className: 'flex-1 bg-primary text-white px-6 py-3 rounded-lg hover:bg-opacity-80 font-semibold'
               }, 'Save Changes'),
               h('button', {
                 onClick: () => setSelectedPlayer(null),
@@ -2938,7 +2938,7 @@ function LegsOpenTournament() {
         },
           h('div', { className: 'flex justify-between items-start mb-6' },
             h('div', null,
-              h('h3', { className: 'text-3xl font-bold text-green-800' }, `${viewingScorecard.player.name}'s Scorecard`),
+              h('h3', { className: 'text-3xl font-bold text-primary' }, `${viewingScorecard.player.name}'s Scorecard`),
               h('p', { className: 'text-gray-600 mt-1' }, `${viewingScorecard.tournament.name} - ${viewingScorecard.tournament.year}`)
             ),
             h('button', {
@@ -2951,12 +2951,12 @@ function LegsOpenTournament() {
           h('div', { className: 'overflow-x-auto' },
             h('table', { className: 'w-full border-collapse' },
               h('thead', null,
-                h('tr', { className: 'bg-green-700 text-white' },
-                  h('th', { className: 'p-3 text-left border border-green-600' }, 'Hole'),
-                  h('th', { className: 'p-3 text-center border border-green-600' }, 'Par'),
-                  h('th', { className: 'p-3 text-center border border-green-600' }, 'SI'),
-                  h('th', { className: 'p-3 text-center border border-green-600' }, 'Score'),
-                  h('th', { className: 'p-3 text-center border border-green-600' }, 'Points')
+                h('tr', { className: 'bg-primary text-white' },
+                  h('th', { className: 'p-3 text-left border border-primary' }, 'Hole'),
+                  h('th', { className: 'p-3 text-center border border-primary' }, 'Par'),
+                  h('th', { className: 'p-3 text-center border border-primary' }, 'SI'),
+                  h('th', { className: 'p-3 text-center border border-primary' }, 'Score'),
+                  h('th', { className: 'p-3 text-center border border-primary' }, 'Points')
                 )
               ),
               h('tbody', null,
@@ -2980,13 +2980,13 @@ function LegsOpenTournament() {
                   const bgColor = !score ? '' :
                     diff <= -2 ? 'bg-yellow-100' :
                     diff === -1 ? 'bg-blue-100' :
-                    diff === 0 ? 'bg-green-100' :
+                    diff === 0 ? 'bg-primary-light bg-opacity-20' :
                     diff === 1 ? 'bg-orange-100' :
                     'bg-red-100';
 
                   return h('tr', {
                     key: hole,
-                    className: `${bgColor} ${hole === 9 ? 'border-b-4 border-green-700' : 'border-b border-gray-200'}`
+                    className: `${bgColor} ${hole === 9 ? 'border-b-4 border-primary' : 'border-b border-gray-200'}`
                   },
                     h('td', { className: 'p-3 font-bold border border-gray-300' }, hole),
                     h('td', { className: 'p-3 text-center border border-gray-300' }, holeData?.par || 4),
@@ -2996,16 +2996,16 @@ function LegsOpenTournament() {
                   );
                 }),
                 // Totals row
-                h('tr', { className: 'bg-green-700 text-white font-bold' },
-                  h('td', { className: 'p-3 border border-green-600' }, 'Total'),
-                  h('td', { className: 'p-3 text-center border border-green-600' },
+                h('tr', { className: 'bg-primary text-white font-bold' },
+                  h('td', { className: 'p-3 border border-primary' }, 'Total'),
+                  h('td', { className: 'p-3 text-center border border-primary' },
                     (viewingScorecard.tournament.holes || APP_CONFIG.defaultHoleData).reduce((sum, h) => sum + h.par, 0)
                   ),
-                  h('td', { className: 'p-3 border border-green-600' }, ''),
-                  h('td', { className: 'p-3 text-center border border-green-600' },
+                  h('td', { className: 'p-3 border border-primary' }, ''),
+                  h('td', { className: 'p-3 text-center border border-primary' },
                     Object.values(viewingScorecard.playerScores).reduce((sum, s) => sum + s, 0) || '-'
                   ),
-                  h('td', { className: 'p-3 text-center border border-green-600' },
+                  h('td', { className: 'p-3 text-center border border-primary' },
                     (() => {
                       let total = 0;
                       const tournamentHoles = viewingScorecard.tournament.holes || APP_CONFIG.defaultHoleData;
@@ -3045,7 +3045,7 @@ function LegsOpenTournament() {
 
   const renderHistoryTab = () => {
     return h('div', { className: 'space-y-6' },
-      h('h2', { className: 'text-3xl font-bold text-green-800 mb-4' }, 'Tournament History'),
+      h('h2', { className: 'text-3xl font-bold text-primary mb-4' }, 'Tournament History'),
       tournaments.length === 0 ? h('div', { className: 'text-center text-gray-500 text-xl py-12' }, 'No tournaments yet') :
       h('div', { className: 'space-y-4' },
         tournaments.map(tournament => {
@@ -3055,7 +3055,7 @@ function LegsOpenTournament() {
           },
             h('div', { className: 'flex justify-between items-center mb-4' },
               h('div', null,
-                h('h3', { className: 'text-2xl font-bold text-green-800' }, tournament.name),
+                h('h3', { className: 'text-2xl font-bold text-primary' }, tournament.name),
                 h('p', { className: 'text-gray-600' }, `${tournament.year} - ${tournament.course_name || 'Course TBD'}`)
               ),
               h('button', {
@@ -3063,7 +3063,7 @@ function LegsOpenTournament() {
                   setCurrentTournament(tournament);
                   setActiveTab('leaderboard');
                 },
-                className: 'bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800'
+                className: 'bg-primary text-white px-4 py-2 rounded-lg hover:bg-opacity-80'
               }, 'View Results')
             )
           );
@@ -3254,8 +3254,8 @@ function LegsOpenTournament() {
 
     return h('div', { className: 'space-y-6' },
       h('div', { className: 'flex items-center gap-3 mb-4' },
-        h('h2', { className: 'text-3xl font-bold text-green-800' }, 'Changelog'),
-        h('span', { className: 'px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold' },
+        h('h2', { className: 'text-3xl font-bold text-primary' }, 'Changelog'),
+        h('span', { className: 'px-3 py-1 bg-primary-light text-white rounded-full text-sm font-bold' },
           `v${changelog[0].version}`
         )
       ),
@@ -3270,7 +3270,7 @@ function LegsOpenTournament() {
           },
             h('div', { className: 'flex items-center justify-between mb-3' },
               h('div', { className: 'flex items-center gap-3' },
-                h('span', { className: 'text-2xl font-bold text-green-800' }, `v${entry.version}`),
+                h('span', { className: 'text-2xl font-bold text-primary' }, `v${entry.version}`),
                 h('span', { className: 'px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm font-semibold' },
                   new Date(entry.date).toLocaleDateString('en-GB', {
                     day: 'numeric',
@@ -3286,7 +3286,7 @@ function LegsOpenTournament() {
                   key: idx,
                   className: 'flex items-start gap-2 text-gray-700'
                 },
-                  h('span', { className: 'text-green-600 mt-1' }, '•'),
+                  h('span', { className: 'text-primary-light mt-1' }, '•'),
                   h('span', null, change)
                 )
               )
@@ -3302,8 +3302,8 @@ function LegsOpenTournament() {
     return h('div', { className: 'min-h-screen hero-pattern flex items-center justify-center p-4' },
       h('div', { className: 'bg-white rounded-lg classic-shadow p-8 max-w-md w-full' },
         h('div', { className: 'text-center mb-6' },
-          h(Icons.Trophy, { className: 'text-green-700 mx-auto mb-3', size: 64 }),
-          h('h1', { className: 'text-4xl font-bold text-green-800 mb-2' }, 'THE LEGS OPEN'),
+          h(Icons.Trophy, { className: 'text-primary mx-auto mb-3', size: 64 }),
+          h('h1', { className: 'text-4xl font-bold text-primary mb-2' }, 'THE LEGS OPEN'),
           h('p', { className: 'text-gray-600' }, 'Please enter your PIN to continue')
         ),
         h('form', { onSubmit: handlePinSubmit },
@@ -3316,7 +3316,7 @@ function LegsOpenTournament() {
               placeholder: 'Enter 4-digit PIN',
               value: enteredPin,
               onChange: (e) => setEnteredPin(e.target.value.replace(/\D/g, '')),
-              className: 'w-full border-2 border-gray-300 p-4 rounded-lg text-center text-2xl font-bold tracking-widest focus:border-green-600 focus:outline-none',
+              className: 'w-full border-2 border-gray-300 p-4 rounded-lg text-center text-2xl font-bold tracking-widest focus:border-primary focus:outline-none',
               autoFocus: true
             })
           ),
@@ -3324,7 +3324,7 @@ function LegsOpenTournament() {
           h('button', {
             type: 'submit',
             disabled: enteredPin.length !== 4,
-            className: 'w-full bg-green-700 text-white px-6 py-4 rounded-lg hover:bg-green-800 font-bold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed'
+            className: 'w-full bg-primary text-white px-6 py-4 rounded-lg hover:bg-opacity-80 font-bold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed'
           }, 'Enter')
         ),
         h('div', { className: 'mt-6 text-center text-sm text-gray-500' },
@@ -3356,7 +3356,7 @@ function LegsOpenTournament() {
         ),
         h('button', {
           onClick: () => window.location.reload(),
-          className: 'mt-4 bg-green-700 text-white px-6 py-2 rounded hover:bg-green-800'
+          className: 'mt-4 bg-primary text-white px-6 py-2 rounded hover:bg-opacity-80'
         }, 'Retry')
       )
     );
@@ -3424,7 +3424,7 @@ function LegsOpenTournament() {
                   key: tab,
                   onClick: () => setActiveTab(tab),
                   className: `px-6 py-4 font-semibold uppercase text-sm tracking-wider transition-all whitespace-nowrap ${
-                    activeTab === tab ? 'bg-white text-green-800 border-b-4 border-yellow-500' : 'text-white hover:bg-white/20'
+                    activeTab === tab ? 'bg-white text-primary border-b-4 border-yellow-500' : 'text-white hover:bg-white/20'
                   }`
                 }, tabLabels[tab] || tab)
               );
